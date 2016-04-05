@@ -1,0 +1,11 @@
+module test
+
+
+
+
+export start
+
+start:
+        mov A $1
+        mov B C
+        mov C D
