@@ -3,8 +3,9 @@
 
 AC_PREREQ([2.69])
 AC_INIT(CVM, 0.0.1, NULL)
-AM_INIT_AUTOMAKE(CVM, 2.6)
-AC_CONFIG_SRCDIR([src])
+AM_INIT_AUTOMAKE(CVM, 2.69)
+AC_OUTPUT(Makefile src/Makefile tests/Makefile)
+AC_CONFIG_SRCDIR([src/errors.c])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
@@ -22,7 +23,4 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 
-AC_CONFIG_FILES([Makefile
-                 src/Makefile
-                 tests/Makefile])
 AC_OUTPUT

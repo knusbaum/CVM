@@ -1,1 +1,2 @@
-SUBDIRS = src . tests
+AUTOMAKE_OPTIONS = foreign
+SUBDIRS = src tests
