@@ -150,6 +150,9 @@ static void apply_type(lexed_instr *instr) {
     else if(strcmp(lexbuff, "exit") == 0) {
         instr->type = EXIT;
     }
+    else if(strcmp(lexbuff, "jmp") == 0) {
+        instr->type = JMP;
+    }
     else {
         instr->type = LABEL;
     }
@@ -185,7 +188,6 @@ lexed_instr *lex_module(char *filename) {
         next_instruction(instr, source);
         apply_type(instr);
     } while(instr->instr != NULL);
-    info("Returning instrs.\n");
     fclose(source);
     return instrs;
 }

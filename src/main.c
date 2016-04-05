@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "errors.h"
 #include "map.h"
 //#include "lexer.h"
  //#include "parser.h"
@@ -16,5 +17,6 @@ int main(void) {
 //    parse_module("test.cvm", m);
 
     run_module("test.cvm");
+    info("CVM finished. Dumping registers.\n");
     dump_regs();
 }

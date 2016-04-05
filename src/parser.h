@@ -15,6 +15,7 @@ struct module {
     struct binstr *binstrs;
     map_t *instrs_regs;
     map_t *data;
+    map_t *labels;
 };
 
 struct module *parse_module(char * filename, map_t *instrs_regs);

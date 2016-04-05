@@ -17,7 +17,7 @@ start:
 
         mov R5 R2
         add R5 $5
-        
+
         mov R6 R0
         add R6 R5
 
@@ -27,4 +27,12 @@ start:
         mov R9 R8
         sub R9 R5
 
+        jmp test
+
+end:
         exit
+
+test:
+        mov R12 $10
+        jmp end
+        

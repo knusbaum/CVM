@@ -55,6 +55,12 @@ void dump_regs() {
     info("R12: 0x%.8X\n", R12);
 }
 
+#define NEXTI {                                 \
+        info("%p\n", bs);                       \
+        bs++;                                   \
+        goto *bs->instr;                        \
+    }
+
 void run_module(char *filename) {
     map_t *m = get_registers();
     map_put(m, "movrr", &&movrr);
@@ -64,54 +70,63 @@ void run_module(char *filename) {
     map_put(m, "addrc", &&addrc);
     map_put(m, "subrr", &&subrr);
     map_put(m, "subrc", &&subrc);
+    map_put(m, "jmpcalc", &&jmpcalc);
     
     map_put(m, "exit", &&exit);
     
     struct module *module = parse_module(filename, m);
     struct binstr *bs = module->binstrs;
+
+    info("Successfully loaded module %s. Running...\n", module->modname);
     
     goto *bs->instr;
     return;
+
+    char *label;
+    void *target;
     
 movrr:
-    info("Executing [MOVRR] on %p %p\n", bs->a1, bs->a2);
+//    info("Executing [MOVRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) = *((uintptr_t *)bs->a2);
-    bs++;
-    goto *bs->instr;
+    NEXTI;
 movrc:
-    info("Executing [MOVRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [MOVRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) = (uintptr_t)bs->a2;
-    bs++;
-    goto *bs->instr;
+    NEXTI;
 incr:
-    info("Executing  [INCR] on %p\n", bs->a1);
+//    info("Executing  [INCR] on %p\n", bs->a1);
     *((uintptr_t *)bs->a1) = *((uintptr_t *)bs->a1)+1;
-    bs++;
-    goto *bs->instr;
+    NEXTI;
 addrr:
-    info("Executing [ADDRR] on %p %p\n", bs->a1, bs->a2);
+//    info("Executing [ADDRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) += *((uintptr_t *)bs->a2);
-    bs++;
-    goto *bs->instr;
+    NEXTI;
 addrc:
-    info("Executing [ADDRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [ADDRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) += (uintptr_t)bs->a2;
-    bs++;
-    goto *bs->instr;
+    NEXTI;
 subrr:
-    info("Executing [SUBRR] on %p %p\n", bs->a1, bs->a2);
+//    info("Executing [SUBRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) -= *((uintptr_t *)bs->a2);
-    bs++;
-    goto *bs->instr;
+    NEXTI;
 subrc:
-    info("Executing [SUBRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [SUBRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) -= (uintptr_t)bs->a2;
-    bs++;
+    NEXTI;
+
+jmpcalc:
+    label = bs->a1;
+    target = map_get(module->labels, label);
+    if(target == NULL) {
+        fatal("Can't jump to label: [%s] because it doesn't exist.\n", 7, label);
+    }
+    info("Jumping to: %p\n", target);
+    bs = target;
     goto *bs->instr;
 
 
 exit:
-    info("Executing  [EXIT]\n");
+    info("CVM got EXIT @ %p\n", bs);
     destroy_module(module);
     map_destroy(m);
     return;

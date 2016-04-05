@@ -32,27 +32,29 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     m->binstrs = malloc(sizeof (struct binstr) * 4096);
     m->instrs_regs = instrs_regs;
     m->data = NULL;
+    m->labels = map_create();
     
     while(instrs->instr != NULL) {
         //printf("{[%d], [%s], [%s], [%s]}\n", instrs->type, instrs->instr, instrs->arg1, instrs->arg2);
         struct binstr b;
         translate_instruction(m, instrs, &b);
-        //info("Got binstr %p\n", b);
         if(b.instr) {
             m->binstrs[m->binstr_count++] = b;
         }
         instrs++;
     }
-    info("Done parsing module.\n");
     info("MODULE [%s] exports: [\n", m->filename);
     for(int i = 0; i < m->export_count; i++) {
         info("\t%s\n", m->exports[i]);
     }
     info("]\n");
-
+    info("instructions: [\n");
     for(int i = 0; i < m->binstr_count; i++) {
-        info("{ %p, %p, %p }\n", m->binstrs[i].instr, m->binstrs[i].a1, m->binstrs[i].a2);
+        info("\t%p: { %p, %p, %p }\n",
+             m->binstrs + i,
+             m->binstrs[i].instr, m->binstrs[i].a1, m->binstrs[i].a2);
     }
+    info("]\n");
     lex_destroy(instrs_p);
     return m;
 }
@@ -62,7 +64,8 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
     b->instr = NULL;
     b->a1 = NULL;
     b->a2 = NULL;
-    
+
+    char *label;
     switch(instr->type) {
     case MODULE:
         ensure_one_arg(m, instr);
@@ -80,15 +83,9 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         strcpy(export, instr->arg1);
         m->exports[m->export_count++] = export;
         break;
-    case DATA:
-        ensure_two_arg(m, instr);
-
-        break;
     case EXIT:
         ensure_zero_arg(m, instr);
         b->instr = get_instr(m, instr->line, "exit");
-        b->a1 = NULL;
-        b->a2 = NULL;
         break;
     case MOV:
         ensure_two_arg(m, instr);
@@ -106,9 +103,25 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         ensure_two_arg(m, instr);
         convert_instr(m, instr, b);
         break;
+    case LABEL:
+        ensure_zero_arg(m, instr);
+        label = malloc(strlen(instr->instr));
+        strcpy(label, instr->instr);
+        label[strlen(label)-1] = 0;
+        info("Creating label [%s] for: %p\n",
+             label, m->binstrs + m->binstr_count);
+        map_put(m->labels, label, m->binstrs + m->binstr_count);
+        break;
+    case JMP:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "jmpcalc");
+        label = malloc(strlen(instr->instr));
+        strcpy(label, instr->arg1);
+        b->a1 = label;
+        break;
+    case DATA:
     case PUSH:
     case POP:
-    case LABEL:
         warn("INSTRUCTION NOT IMPLEMENTED: [%s] %s : %lu\n",
              instr->instr, m->filename, instr->line);
     }
@@ -200,6 +213,7 @@ void destroy_module(struct module *m) {
         free(m->exports);
     }
     if(m->binstrs) free(m->binstrs);
-    if(m->data) free(m->data);
+    if(m->data) map_destroy(m->data);
+    map_destroy(m->labels);
     free(m);
 }

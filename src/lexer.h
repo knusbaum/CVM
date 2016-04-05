@@ -1,4 +1,4 @@
-enum token_type { MODULE, EXPORT, MOV, PUSH, POP, ADD, SUB, INC, DATA, EXIT, LABEL };
+enum token_type { MODULE, EXPORT, MOV, PUSH, POP, ADD, SUB, INC, DATA, EXIT, JMP, LABEL };
 
 typedef struct lexed_instr {
     enum token_type type;
