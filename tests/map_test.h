@@ -1,0 +1,2 @@
+
+TCase *map_testcases();

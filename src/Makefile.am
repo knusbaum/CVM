@@ -5,4 +5,4 @@ bin_PROGRAMS = cvm
 cvm_SOURCES = main.c errors.c lexer.c parser.c vm.c
 
 noinst_LIBRARIES=libcvm.a
-libcvm_a_SOURCES=errors.c lexer.c parser.c vm.c
+libcvm_a_SOURCES=map.c errors.c lexer.c parser.c vm.c
