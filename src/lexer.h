@@ -1,4 +1,4 @@
-enum token_type { MODULE, EXPORT, MOV, PUSH, POP, ADD, SUB, LABEL };
+enum token_type { MODULE, EXPORT, MOV, PUSH, POP, ADD, SUB, INC, DATA, EXIT, LABEL };
 
 typedef struct lexed_instr {
     enum token_type type;
@@ -9,4 +9,4 @@ typedef struct lexed_instr {
 } lexed_instr;
 
 lexed_instr *lex_module(char *filename);
-
+void lex_destroy(lexed_instr *instrs);

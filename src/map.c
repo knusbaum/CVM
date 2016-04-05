@@ -41,6 +41,8 @@ void map_put(map_t *m, char *key, void *val) {
 }
 
 void *map_get(map_t *m, char *key) {
+    if(key == NULL) return NULL;
+    
     for(size_t i = 0; i < m->count; i++) {
         if(strcmp(m->keys[i], key) == 0) {
             return m->vals[i];

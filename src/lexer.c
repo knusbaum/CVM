@@ -141,6 +141,15 @@ static void apply_type(lexed_instr *instr) {
     else if(strcmp(lexbuff, "sub") == 0) {
         instr->type = SUB;
     }
+    else if(strcmp(lexbuff, "inc") == 0) {
+        instr->type = INC;
+    }
+    else if(strcmp(lexbuff, "data") == 0) {
+        instr->type = DATA;
+    }
+    else if(strcmp(lexbuff, "exit") == 0) {
+        instr->type = EXIT;
+    }
     else {
         instr->type = LABEL;
     }
@@ -174,9 +183,26 @@ lexed_instr *lex_module(char *filename) {
         }
         instr = &instrs[currindex++];
         next_instruction(instr, source);
-//        printf("{[%s], [%s], [%s]}\n", instr->instr, instr->arg1, instr->arg2);
         apply_type(instr);
     } while(instr->instr != NULL);
     info("Returning instrs.\n");
+    fclose(source);
     return instrs;
+}
+
+void lex_destroy(lexed_instr *instrs) {
+    lexed_instr *curr = instrs;
+    while(curr->instr) {
+        if(curr->instr) {
+            free(curr->instr);
+        }
+        if(curr->arg1) {
+            free(curr->arg1);
+        }
+        if(curr->arg2) {
+            free(curr->arg2);
+        }
+        curr++;
+    }
+    free(instrs);
 }
