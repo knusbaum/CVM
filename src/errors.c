@@ -7,8 +7,8 @@
 
 static void do_print(const char * prec, const char * format, va_list args) {
     char buffer[BUFFER_SIZE];
-    strncpy(buffer, prec, BUFFER_SIZE);
-    strncat(buffer, format, BUFFER_SIZE - strlen(prec));
+    strncpy(buffer, prec, BUFFER_SIZE - 1);
+    strncat(buffer, format, BUFFER_SIZE - strlen(prec) - 1);
     buffer[BUFFER_SIZE-1] = 0;
     vfprintf(stderr, buffer, args);
 }
