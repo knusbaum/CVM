@@ -16,7 +16,7 @@ static void ensure_one_arg(struct module *m, lexed_instr *instr);
 static void ensure_two_arg(struct module *m, lexed_instr *instr);
 
 static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *bin);
-static void *parse_arg(struct module *m, char *arg);
+static uintptr_t parse_arg(struct module *m, char *arg);
 static void *get_instr(struct module *m, int line, char * instr);
 
 struct module *parse_module(char * filename, map_t *instrs_regs) {
@@ -79,8 +79,8 @@ static void add_structure(struct module *m, lexed_instr *instr) {
 
 static void translate_instruction(struct module *m, lexed_instr *instr, struct binstr *b) {
     b->instr = NULL;
-    b->a1 = NULL;
-    b->a2 = NULL;
+    b->a1 = 0;
+    b->a2 = 0;
 
     char *label;
     switch(instr->type) {
@@ -112,6 +112,10 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         ensure_one_arg(m, instr);
         convert_instr(m, instr, b);
         break;
+    case CMP:
+        ensure_two_arg(m, instr);
+        convert_instr(m, instr, b);
+        break;
     case ADD:
         ensure_two_arg(m, instr);
         convert_instr(m, instr, b);
@@ -132,9 +136,24 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
     case JMP:
         ensure_one_arg(m, instr);
         b->instr = get_instr(m, instr->line, "jmpcalc");
-        label = GC_MALLOC(strlen(instr->instr));
+        label = GC_MALLOC(strlen(instr->arg1));
         strcpy(label, instr->arg1);
-        b->a1 = label;
+        b->label = label;
+        info("JUMP: instr->instr: %s\n", instr->instr);
+        break;
+    case JE:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "jecalc");
+        label = GC_MALLOC(strlen(instr->arg1));
+        strcpy(label, instr->arg1);
+        b->label = label;
+        break;
+    case JNE:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "jnecalc");
+        label = GC_MALLOC(strlen(instr->arg1));
+        strcpy(label, instr->arg1);
+        b->label = label;
         break;
     case STRUCT:
         ensure_two_arg(m, instr);
@@ -147,14 +166,14 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
     case NEW:
         ensure_two_arg(m, instr);
         b->instr = get_instr(m, instr->line, "new");
-        void *reg = map_get(m->instrs_regs, instr->arg1);
+        char reg = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
         struct parsed_struct *st = map_get(m->structures, instr->arg2);
         if(!st) {
             fatal("Line %d: No such struct: %s.\n",
                   7, instr->line, instr->arg2);
         }
         b->a1 = reg;
-        b->a2 = (void *)st->struct_size;
+        b->constant = (uintptr_t)st->struct_size;
         info("New on register %s(%p) of size %d.\n",
              instr->arg1, reg, st->struct_size);
         break;
@@ -209,7 +228,7 @@ static void *get_instr(struct module *m, int line, char * instr) {
     return istr;
 }
 
-static int parse_structmember(struct module *m, lexed_instr *instr, char *regname, void **reg_p, size_t *offset) {
+static int parse_structmember(struct module *m, lexed_instr *instr, char *regname, char *reg_p, size_t *offset) {
     size_t length = strlen(regname);
     char reg[length];
     char struct_name[length];
@@ -221,23 +240,23 @@ static int parse_structmember(struct module *m, lexed_instr *instr, char *regnam
         return 0;
     }
 
-    *reg_p = map_get(m->instrs_regs, reg);
-    if(!*reg_p) {
-//        fatal("Line %d: No such register: %s",
-//              instr->line, reg);
+    if(!map_present(m->instrs_regs, reg)) {
+        fatal("Line %d: No such register: %s",
+              instr->line, reg);
         return 0;
     }
+    *reg_p = (uintptr_t)map_get(m->instrs_regs, reg);
 
     struct parsed_struct *st = map_get(m->structures, struct_name);
     if(!st) {
-//        fatal("Line %d: No such struct: %s",
-//              instr->line, struct_name);
+        fatal("Line %d: No such struct: %s",
+              instr->line, struct_name);
         return 0;
     }
 
     if(!map_present(st->members, struct_member)) {
-//        fatal("Line %d: No such member %s in struct: %s",
-//              instr->line, struct_member, struct_name);
+        fatal("Line %d: No such member %s in struct: %s",
+              instr->line, struct_member, struct_name);
         return 0;
     }
     *offset = (size_t)map_get(st->members, struct_member);
@@ -245,17 +264,17 @@ static int parse_structmember(struct module *m, lexed_instr *instr, char *regnam
 }
 
 static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *bin) {
-    void * a1 = map_get(m->instrs_regs, instr->arg1);
-    void * a2 = map_get(m->instrs_regs, instr->arg2);
+    char a1 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
+    char a2 = (uintptr_t)map_get(m->instrs_regs, instr->arg2);
 
     char instr_name[10];
     strcpy(instr_name, instr->instr);
-    if(a1) {
+    if(map_present(m->instrs_regs, instr->arg1)) {
         bin->a1 = a1;
         strcat(instr_name, "r");
     }
     else if(instr->arg1) {
-        void *reg_p;
+        char reg_p;
         size_t offset;
         if(parse_structmember(m, instr, instr->arg1, &reg_p, &offset)) {
             bin->a1 = reg_p;
@@ -268,12 +287,12 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
         }
     }
 
-    if(a2) {
+    if(map_present(m->instrs_regs, instr->arg2)) {
         bin->a2 = a2;
         strcat(instr_name, "r");
     }
     else if(instr->arg2) {
-        void *reg_p;
+        char reg_p;
         size_t offset;
         if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset)) {
             bin->a2 = reg_p;
@@ -281,7 +300,7 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
             strcat(instr_name, "o");
         }
         else {
-            bin->a2 = parse_arg(m, instr->arg2);
+            bin->constant = parse_arg(m, instr->arg2);
             strcat(instr_name, "c");
         }
     }
@@ -289,10 +308,10 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
     bin->instr = get_instr(m, instr->line, instr_name);
 }
 
-static void *parse_arg(struct module *m, char *arg) {
-    intptr_t x;
+static uintptr_t parse_arg(struct module *m, char *arg) {
+    uintptr_t x;
     sscanf(arg, "$%ld", &x);
-    return (void *)x;
+    return x;
 }
 
 void destroy_module(struct module *m) {

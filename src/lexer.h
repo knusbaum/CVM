@@ -7,9 +7,12 @@ enum token_type {
     ADD,
     SUB,
     INC,
+    CMP,
     DATA,
     EXIT,
     JMP,
+    JE,
+    JNE,
     LABEL,
     STRUCT,
     NEW

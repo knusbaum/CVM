@@ -1,9 +1,13 @@
 struct binstr {
     void *instr;
-    void *a1;
-    void *a2;
+    unsigned char a1;
+    unsigned char a2;
     size_t offset;
-    size_t offset2;
+    union {
+        uintptr_t constant;
+        char *label;
+        size_t offset2;
+    };
 };
 
 struct parsed_struct {

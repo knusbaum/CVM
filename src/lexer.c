@@ -120,6 +120,9 @@ static void apply_type(lexed_instr *instr) {
     else if(strcmp(lexbuff, "inc") == 0) {
         instr->type = INC;
     }
+    else if(strcmp(lexbuff, "cmp") == 0) {
+        instr->type = CMP;
+    }
     else if(strcmp(lexbuff, "data") == 0) {
         instr->type = DATA;
     }
@@ -128,6 +131,12 @@ static void apply_type(lexed_instr *instr) {
     }
     else if(strcmp(lexbuff, "jmp") == 0) {
         instr->type = JMP;
+    }
+    else if(strcmp(lexbuff, "je") == 0) {
+        instr->type = JE;
+    }
+    else if(strcmp(lexbuff, "jne") == 0) {
+        instr->type = JNE;
     }
     else if(strcmp(lexbuff, "struct") == 0) {
         instr->type = STRUCT;
