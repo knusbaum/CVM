@@ -42,7 +42,7 @@ void map_put(map_t *m, char *key, void *val) {
 
 void *map_get(map_t *m, char *key) {
     if(key == NULL) return NULL;
-    
+
     for(size_t i = 0; i < m->count; i++) {
         if(strcmp(m->keys[i], key) == 0) {
             return m->vals[i];
@@ -62,6 +62,17 @@ void *map_delete(map_t *m, char *key) {
         }
     }
     return NULL;
+}
+
+int map_present(map_t *m, char *key) {
+    if(key == NULL) return 0;
+
+    for(size_t i = 0; i < m->count; i++) {
+        if(strcmp(m->keys[i], key) == 0) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void map_destroy(map_t *m) {

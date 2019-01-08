@@ -1,11 +1,39 @@
-enum token_type { MODULE, EXPORT, MOV, PUSH, POP, ADD, SUB, INC, DATA, EXIT, JMP, LABEL };
+enum token_type {
+    MODULE,
+    EXPORT,
+    MOV,
+    PUSH,
+    POP,
+    ADD,
+    SUB,
+    INC,
+    DATA,
+    EXIT,
+    JMP,
+    LABEL,
+    STRUCT,
+    NEW
+};
+
+typedef struct lexed_member {
+    char *name;
+} lexed_member;
+
+typedef struct lexed_struct {
+    int member_count;
+    int member_length;
+    lexed_member *members;
+} lexed_struct;
 
 typedef struct lexed_instr {
     enum token_type type;
     unsigned long line;
     char * instr;
     char * arg1;
-    char * arg2;
+    union {
+        char * arg2;
+        lexed_struct *lexed_struct;
+    };
 } lexed_instr;
 
 lexed_instr *lex_module(char *filename);

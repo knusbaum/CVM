@@ -71,6 +71,7 @@ void run_module(char *filename) {
     map_put(m, "subrr", &&subrr);
     map_put(m, "subrc", &&subrc);
     map_put(m, "jmpcalc", &&jmpcalc);
+    map_put(m, "new", &&new);
     
     map_put(m, "exit", &&exit);
     
@@ -86,31 +87,31 @@ void run_module(char *filename) {
     void *target;
     
 movrr:
-//    info("Executing [MOVRR] on %p %p\n", bs->a1, bs->a2);
+    info("Executing [MOVRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) = *((uintptr_t *)bs->a2);
     NEXTI;
 movrc:
-//    info("Executing [MOVRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+    info("Executing [MOVRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) = (uintptr_t)bs->a2;
     NEXTI;
 incr:
-//    info("Executing  [INCR] on %p\n", bs->a1);
+    info("Executing  [INCR] on %p\n", bs->a1);
     *((uintptr_t *)bs->a1) = *((uintptr_t *)bs->a1)+1;
     NEXTI;
 addrr:
-//    info("Executing [ADDRR] on %p %p\n", bs->a1, bs->a2);
+    info("Executing [ADDRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) += *((uintptr_t *)bs->a2);
     NEXTI;
 addrc:
-//    info("Executing [ADDRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+    info("Executing [ADDRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) += (uintptr_t)bs->a2;
     NEXTI;
 subrr:
-//    info("Executing [SUBRR] on %p %p\n", bs->a1, bs->a2);
+    info("Executing [SUBRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) -= *((uintptr_t *)bs->a2);
     NEXTI;
 subrc:
-//    info("Executing [SUBRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+    info("Executing [SUBRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) -= (uintptr_t)bs->a2;
     NEXTI;
 
@@ -124,7 +125,12 @@ jmpcalc:
     bs = target;
     goto *bs->instr;
 
-
+new:
+    *((uintptr_t *)bs->a1) = (uintptr_t)malloc(((uintptr_t)bs->a2) * sizeof (void *));
+    info("Executing [NEW] object at %p in %p size %lu\n",
+         *((uintptr_t *)bs->a1), bs->a1, (uintptr_t)bs->a2);
+    NEXTI;
+    
 exit:
     info("CVM got EXIT @ %p\n", bs);
     destroy_module(module);

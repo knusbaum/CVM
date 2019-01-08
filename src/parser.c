@@ -33,7 +33,8 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     m->instrs_regs = instrs_regs;
     m->data = NULL;
     m->labels = map_create();
-    
+    m->structures = map_create();
+
     while(instrs->instr != NULL) {
         //printf("{[%d], [%s], [%s], [%s]}\n", instrs->type, instrs->instr, instrs->arg1, instrs->arg2);
         struct binstr b;
@@ -59,6 +60,21 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     return m;
 }
 
+static void add_structure(struct module *m, lexed_instr *instr) {
+    struct parsed_struct *structure = malloc(sizeof (struct parsed_struct));
+    structure->struct_size = 0;
+    structure->members = map_create();
+    for(size_t i = 0; i < instr->lexed_struct->member_count; i++) {
+        lexed_member *member = instr->lexed_struct->members + i;
+        if(map_present(structure->members, member->name)) {
+            fatal("Line %d: Duplicate member %s in structure %s.\n",
+                  5, instr->line, member->name, instr->arg1);
+        }
+        map_put(structure->members, member->name, (void *)i);
+        structure->struct_size++;
+    }
+    map_put(m->structures, instr->arg1, structure);
+}
 
 static void translate_instruction(struct module *m, lexed_instr *instr, struct binstr *b) {
     b->instr = NULL;
@@ -119,11 +135,33 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         strcpy(label, instr->arg1);
         b->a1 = label;
         break;
+    case STRUCT:
+        ensure_two_arg(m, instr);
+        info("Creating struct with name %s\n", instr->arg1);
+        if(map_present(m->structures, instr->arg1)) {
+            fatal("Line %d: Redefinition of struct %s.\n", 4, instr->line, instr->arg1);
+        }
+        add_structure(m, instr);
+        break;
+    case NEW:
+        ensure_two_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "new");
+        void *reg = map_get(m->instrs_regs, instr->arg1);
+        struct parsed_struct *st = map_get(m->structures, instr->arg2);
+        if(!st) {
+            fatal("Line %d: No such struct: %s.\n",
+                  7, instr->line, instr->arg2);
+        }
+        b->a1 = reg;
+        b->a2 = (void *)st->struct_size;
+        info("New on register %s(%p) of size %d.\n",
+             instr->arg1, reg, st->struct_size);
+        break;
     case DATA:
     case PUSH:
     case POP:
-        warn("INSTRUCTION NOT IMPLEMENTED: [%s] %s : %lu\n",
-             instr->instr, m->filename, instr->line);
+        fatal("INSTRUCTION NOT IMPLEMENTED: [%s] %s : %lu\n",
+              6, instr->instr, m->filename, instr->line);
     }
 }
 
@@ -194,7 +232,7 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
         bin->a2 = parse_arg(m, instr->arg2);
         strcat(instr_name, "c");
     }
-    
+
     bin->instr = get_instr(m, instr->line, instr_name);
 }
 

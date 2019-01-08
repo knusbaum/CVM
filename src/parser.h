@@ -1,8 +1,12 @@
-
 struct binstr {
     void *instr;
     void *a1;
     void *a2;
+};
+
+struct parsed_struct {
+    size_t struct_size;
+    map_t *members;
 };
 
 struct module {
@@ -16,8 +20,12 @@ struct module {
     map_t *instrs_regs;
     map_t *data;
     map_t *labels;
+
+    // map_t<char *, map_t<char *, size_t>>
+    // struct_name -> member_name -> offset
+    map_t *structures;
+
 };
 
 struct module *parse_module(char * filename, map_t *instrs_regs);
 void destroy_module(struct module *m);
-
