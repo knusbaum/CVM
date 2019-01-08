@@ -4,32 +4,7 @@ struct foo
     bar
     baz
     boo
-    a
-    b
-    c
-    d
-    e
-    f
-    g
-    h
-    i
-    j
-    k
-    l
-    m
-    n
-    o
-    p
-    q
-    r
-    s
-    t
-    u
-    v
-    w
-    x
-    y
-    z
+    #dododo
 endstruct
 
 export start
@@ -44,19 +19,24 @@ start:
         mov R2 R1
         inc R2
 
-        mov R5 R2
-        add R5 $5
+        mov R3 R2
+        add R3 $5
 
-        mov R6 R0
-        add R6 R5
+        mov R4 R0
+        add R4 R3
 
-        mov R8 $0
-        sub R8 $1
+        mov R5 $0
+        sub R5 $1
 
-        mov R9 R8
-        sub R9 R5
+        mov R6 R5
+        sub R6 R3
 
-        new R10 foo
+        new R7 foo
+
+        mov R7(foo.bar) $10
+        mov R7(foo.boo) $11
+        mov R8 R7(foo.bar)
+        mov R9 R7(foo.boo)
 
         jmp test
 

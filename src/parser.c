@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include "gc.h"
 #include "errors.h"
 #include "lexer.h"
 #include "map.h"
@@ -21,7 +22,7 @@ static void *get_instr(struct module *m, int line, char * instr);
 struct module *parse_module(char * filename, map_t *instrs_regs) {
     lexed_instr *instrs_p = lex_module(filename);
     lexed_instr *instrs = instrs_p;
-    struct module *m = malloc(sizeof (struct module));
+    struct module *m = GC_MALLOC(sizeof (struct module));
 
     m->filename = filename;
     m->modname = NULL;
@@ -29,7 +30,7 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     m->export_count = 0;
     m->exports = NULL;
     m->binstr_count = 0;
-    m->binstrs = malloc(sizeof (struct binstr) * 4096);
+    m->binstrs = GC_MALLOC(sizeof (struct binstr) * 4096);
     m->instrs_regs = instrs_regs;
     m->data = NULL;
     m->labels = map_create();
@@ -61,7 +62,7 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
 }
 
 static void add_structure(struct module *m, lexed_instr *instr) {
-    struct parsed_struct *structure = malloc(sizeof (struct parsed_struct));
+    struct parsed_struct *structure = GC_MALLOC(sizeof (struct parsed_struct));
     structure->struct_size = 0;
     structure->members = map_create();
     for(size_t i = 0; i < instr->lexed_struct->member_count; i++) {
@@ -88,14 +89,14 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         if(m->modname != NULL) {
             fatal("Multiple module definition in file: %s : %lu\n", 4, m->filename, instr->line);
         }
-        char *modname = malloc(strlen(instr->arg1) + 1);
+        char *modname = GC_MALLOC(strlen(instr->arg1) + 1);
         strcpy(modname, instr->arg1);
         m->modname = modname;
         break;
     case EXPORT:
         ensure_one_arg(m, instr);
         ensure_export_space(m);
-        char *export = malloc(strlen(instr->arg1) + 1);
+        char *export = GC_MALLOC(strlen(instr->arg1) + 1);
         strcpy(export, instr->arg1);
         m->exports[m->export_count++] = export;
         break;
@@ -121,7 +122,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         break;
     case LABEL:
         ensure_zero_arg(m, instr);
-        label = malloc(strlen(instr->instr));
+        label = GC_MALLOC(strlen(instr->instr));
         strcpy(label, instr->instr);
         label[strlen(label)-1] = 0;
         info("Creating label [%s] for: %p\n",
@@ -131,7 +132,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
     case JMP:
         ensure_one_arg(m, instr);
         b->instr = get_instr(m, instr->line, "jmpcalc");
-        label = malloc(strlen(instr->instr));
+        label = GC_MALLOC(strlen(instr->instr));
         strcpy(label, instr->arg1);
         b->a1 = label;
         break;
@@ -169,7 +170,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
 static void ensure_export_space(struct module *m) {
 
     if(m->export_space == 0) {
-        m->exports = malloc(sizeof (char **) * INITIAL_EXPORTS);
+        m->exports = GC_MALLOC(sizeof (char **) * INITIAL_EXPORTS);
         m->export_space = INITIAL_EXPORTS;
         *m->exports = NULL;
     }
@@ -208,6 +209,41 @@ static void *get_instr(struct module *m, int line, char * instr) {
     return istr;
 }
 
+static int parse_structmember(struct module *m, lexed_instr *instr, char *regname, void **reg_p, size_t *offset) {
+    size_t length = strlen(regname);
+    char reg[length];
+    char struct_name[length];
+    char struct_member[length];
+    int scanned = sscanf(regname, "%[^(](%[^.].%[^)])", reg, struct_name, struct_member);
+    if(scanned != 3) {
+//        fatal("Line %d: Failed to parse struct offset from: %s\n",
+//              instr->line, regname);
+        return 0;
+    }
+
+    *reg_p = map_get(m->instrs_regs, reg);
+    if(!*reg_p) {
+//        fatal("Line %d: No such register: %s",
+//              instr->line, reg);
+        return 0;
+    }
+
+    struct parsed_struct *st = map_get(m->structures, struct_name);
+    if(!st) {
+//        fatal("Line %d: No such struct: %s",
+//              instr->line, struct_name);
+        return 0;
+    }
+
+    if(!map_present(st->members, struct_member)) {
+//        fatal("Line %d: No such member %s in struct: %s",
+//              instr->line, struct_member, struct_name);
+        return 0;
+    }
+    *offset = (size_t)map_get(st->members, struct_member);
+    return 1;
+}
+
 static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *bin) {
     void * a1 = map_get(m->instrs_regs, instr->arg1);
     void * a2 = map_get(m->instrs_regs, instr->arg2);
@@ -219,9 +255,17 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
         strcat(instr_name, "r");
     }
     else if(instr->arg1) {
-//        bin->a1 = parse_arg(m, instr->arg1);
-        fatal("Target must be a register. Moving to memory not implemented. %s : %d\n", 6,
-              m->filename, instr->line);
+        void *reg_p;
+        size_t offset;
+        if(parse_structmember(m, instr, instr->arg1, &reg_p, &offset)) {
+            bin->a1 = reg_p;
+            bin->offset = offset;
+            strcat(instr_name, "o");
+        }
+        else {
+            fatal("Target must be a register. Moving to memory not implemented. %s : %d\n", 6,
+                  m->filename, instr->line);
+        }
     }
 
     if(a2) {
@@ -229,8 +273,17 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
         strcat(instr_name, "r");
     }
     else if(instr->arg2) {
-        bin->a2 = parse_arg(m, instr->arg2);
-        strcat(instr_name, "c");
+        void *reg_p;
+        size_t offset;
+        if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset)) {
+            bin->a2 = reg_p;
+            bin->offset2 = offset;
+            strcat(instr_name, "o");
+        }
+        else {
+            bin->a2 = parse_arg(m, instr->arg2);
+            strcat(instr_name, "c");
+        }
     }
 
     bin->instr = get_instr(m, instr->line, instr_name);
@@ -243,15 +296,15 @@ static void *parse_arg(struct module *m, char *arg) {
 }
 
 void destroy_module(struct module *m) {
-    free(m->modname);
-    if(m->exports) {
-        for(int i = 0; i < m->export_count; i++) {
-            free(m->exports[i]);
-        }
-        free(m->exports);
-    }
-    if(m->binstrs) free(m->binstrs);
-    if(m->data) map_destroy(m->data);
-    map_destroy(m->labels);
-    free(m);
+//    free(m->modname);
+//    if(m->exports) {
+//        for(int i = 0; i < m->export_count; i++) {
+//            free(m->exports[i]);
+//        }
+//        free(m->exports);
+//    }
+//    if(m->binstrs) free(m->binstrs);
+//    if(m->data) map_destroy(m->data);
+//    map_destroy(m->labels);
+//    free(m);
 }

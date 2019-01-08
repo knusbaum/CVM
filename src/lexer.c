@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include "gc.h"
 #include "lexer.h"
 #include "errors.h"
 
@@ -76,7 +77,7 @@ static char *lex_white_separated(FILE *f) {
     }
     lexbuff[pbindex] = 0;
 
-    char *ret = malloc(pbindex+1);
+    char *ret = GC_MALLOC(pbindex+1);
     strcpy(ret, lexbuff);
     return ret;
 }
@@ -160,7 +161,7 @@ static void lex_struct(lexed_struct *s, FILE *f) {
         if(s->member_count == s->member_length) {
             info("Reallocing.\n");
             s->member_length *= 2;
-            s->members = realloc(s->members, s->member_length * sizeof (lexed_member));
+            s->members = GC_REALLOC(s->members, s->member_length * sizeof (lexed_member));
         }
 
         s->members[s->member_count++].name = member_name;
@@ -194,10 +195,10 @@ static void next_instruction(lexed_instr *i, FILE *f) {
     apply_type(i);
     if(i->type == STRUCT) {
         info("Lexer creating struct.\n");
-        lexed_struct *structure = malloc(sizeof (lexed_struct));
+        lexed_struct *structure = GC_MALLOC(sizeof (lexed_struct));
         structure->member_count = 0;
         structure->member_length = 8;
-        structure->members = malloc(sizeof (lexed_member) * structure->member_length);
+        structure->members = GC_MALLOC(sizeof (lexed_member) * structure->member_length);
         lex_struct(structure, f);
         i->lexed_struct = structure;
     }
@@ -211,7 +212,7 @@ lexed_instr *lex_module(char *filename) {
     lexer_init(source);
 
     int instrs_scale = 1;
-    lexed_instr *instrs = malloc(sizeof (lexed_instr)
+    lexed_instr *instrs = GC_MALLOC(sizeof (lexed_instr)
                                   * instrs_scale
                                   * INSTRS_PER_ALLOC);
     unsigned long currindex = 0;
@@ -224,7 +225,7 @@ lexed_instr *lex_module(char *filename) {
         if(currindex == instrs_scale * INSTRS_PER_ALLOC) {
             info("Allocing more instr space for module.\n");
             instrs_scale *= 2;
-            instrs = realloc(instrs,
+            instrs = GC_REALLOC(instrs,
                              sizeof (lexed_instr)
                              * instrs_scale
                              * INSTRS_PER_ALLOC);
@@ -237,35 +238,35 @@ lexed_instr *lex_module(char *filename) {
 }
 
 void lex_destroy(lexed_instr *instrs) {
-    lexed_instr *curr = instrs;
-    while(curr->instr) {
-        if(curr->type == STRUCT) {
-            if(curr->instr) {
-                free(curr->instr);
-            }
-            if(curr->arg1) {
-                free(curr->arg1);
-            }
-            if(curr->lexed_struct) {
-                for(int i = 0; i < curr->lexed_struct->member_count; i++) {
-                    free(curr->lexed_struct->members[i].name);
-                }
-                free(curr->lexed_struct->members);
-                free(curr->lexed_struct);
-            }
-        }
-        else {
-            if(curr->instr) {
-                free(curr->instr);
-            }
-            if(curr->arg1) {
-                free(curr->arg1);
-            }
-            if(curr->arg2) {
-                free(curr->arg2);
-            }
-        }
-        curr++;
-    }
-    free(instrs);
+//    lexed_instr *curr = instrs;
+//    while(curr->instr) {
+//        if(curr->type == STRUCT) {
+//            if(curr->instr) {
+//                free(curr->instr);
+//            }
+//            if(curr->arg1) {
+//                free(curr->arg1);
+//            }
+//            if(curr->lexed_struct) {
+//                for(int i = 0; i < curr->lexed_struct->member_count; i++) {
+//                    free(curr->lexed_struct->members[i].name);
+//                }
+//                free(curr->lexed_struct->members);
+//                free(curr->lexed_struct);
+//            }
+//        }
+//        else {
+//            if(curr->instr) {
+//                free(curr->instr);
+//            }
+//            if(curr->arg1) {
+//                free(curr->arg1);
+//            }
+//            if(curr->arg2) {
+//                free(curr->arg2);
+//            }
+//        }
+//        curr++;
+//    }
+//    free(instrs);
 }

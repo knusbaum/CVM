@@ -1,5 +1,5 @@
 AM_CFLAGS = -ggdb -O0 -std=c11 -pedantic -Wall -Werror
-AM_LDFLAGS=
+AM_LDFLAGS = -lgc
 
 #bin_PROGRAMS=test
 #test_SOURCES=test.c

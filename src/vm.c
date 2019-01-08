@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include "gc.h"
 #include "errors.h"
 #include "map.h"
 #include "vm.h"
@@ -40,23 +41,23 @@ map_t *get_registers() {
 
 void dump_regs() {
     info("Current State:\n");
-    info("R0:  0x%.8X\n", R0);
-    info("R1:  0x%.8X\n", R1);
-    info("R2:  0x%.8X\n", R2);
-    info("R3:  0x%.8X\n", R3);
-    info("R4:  0x%.8X\n", R4);
-    info("R5:  0x%.8X\n", R5);
-    info("R6:  0x%.8X\n", R6);
-    info("R7:  0x%.8X\n", R7);
-    info("R8:  0x%.8X\n", R8);
-    info("R9:  0x%.8X\n", R9);
-    info("R10: 0x%.8X\n", R10);
-    info("R11: 0x%.8X\n", R11);
-    info("R12: 0x%.8X\n", R12);
+    info("R0:  0x%.16lX\n", R0);
+    info("R1:  0x%.16lX\n", R1);
+    info("R2:  0x%.16lX\n", R2);
+    info("R3:  0x%.16lX\n", R3);
+    info("R4:  0x%.16lX\n", R4);
+    info("R5:  0x%.16lX\n", R5);
+    info("R6:  0x%.16lX\n", R6);
+    info("R7:  0x%.16lX\n", R7);
+    info("R8:  0x%.16lX\n", R8);
+    info("R9:  0x%.16lX\n", R9);
+    info("R10: 0x%.16lX\n", R10);
+    info("R11: 0x%.16lX\n", R11);
+    info("R12: 0x%.16lX\n", R12);
 }
 
+//        info("%p\n", bs);                     
 #define NEXTI {                                 \
-        info("%p\n", bs);                       \
         bs++;                                   \
         goto *bs->instr;                        \
     }
@@ -65,6 +66,12 @@ void run_module(char *filename) {
     map_t *m = get_registers();
     map_put(m, "movrr", &&movrr);
     map_put(m, "movrc", &&movrc);
+    map_put(m, "movro", &&movro);
+    
+    map_put(m, "movor", &&movor);
+    map_put(m, "movoc", &&movoc);
+    map_put(m, "movoo", &&movoo);
+    
     map_put(m, "incr", &&incr);
     map_put(m, "addrr", &&addrr);
     map_put(m, "addrc", &&addrc);
@@ -85,33 +92,61 @@ void run_module(char *filename) {
 
     char *label;
     void *target;
+    uintptr_t *ob, *ob2;
     
 movrr:
-    info("Executing [MOVRR] on %p %p\n", bs->a1, bs->a2);
+//    info("Executing [MOVRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) = *((uintptr_t *)bs->a2);
     NEXTI;
 movrc:
-    info("Executing [MOVRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [MOVRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) = (uintptr_t)bs->a2;
     NEXTI;
+movro:
+    info("Executing [MOVRO] on %p object %p(%d)\n", bs->a1, bs->a2, bs->offset2);
+    ob = *((void **)bs->a2);
+    ob += bs->offset2;
+    *((uintptr_t *)bs->a1) = *ob;
+    NEXTI;
+movor:
+    info("Executing [MOVOR] on object %p(%d), %p \n", bs->a1, bs->offset, bs->a2);
+    ob = *((void **)bs->a1);
+    info("bs->a1 == %p\n*bs->a1 == %p\n", bs->a1, ob);
+    ob += bs->offset;
+    *ob = *((uintptr_t *)bs->a2);
+    NEXTI;
+movoc:
+    info("Executing [MOVOC] on object %p(%d), %p \n", bs->a1, bs->offset, (uintptr_t)bs->a2);
+    ob = *((void **)bs->a1);
+    ob += bs->offset;
+    *ob = (uintptr_t)bs->a2;
+    NEXTI;
+movoo:
+    info("Executing [MOVOO] on object %p(%d), object %p(%d)\n", bs->a1, bs->offset, bs->a2, bs->offset2);
+    ob = *((void **)bs->a1);
+    ob += bs->offset;
+    ob2 = *((void **)bs->a2);
+    ob2 += bs->offset2;
+    *ob = *ob2;
+    NEXTI;
 incr:
-    info("Executing  [INCR] on %p\n", bs->a1);
+//    info("Executing  [INCR] on %p\n", bs->a1);
     *((uintptr_t *)bs->a1) = *((uintptr_t *)bs->a1)+1;
     NEXTI;
 addrr:
-    info("Executing [ADDRR] on %p %p\n", bs->a1, bs->a2);
+//    info("Executing [ADDRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) += *((uintptr_t *)bs->a2);
     NEXTI;
 addrc:
-    info("Executing [ADDRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [ADDRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) += (uintptr_t)bs->a2;
     NEXTI;
 subrr:
-    info("Executing [SUBRR] on %p %p\n", bs->a1, bs->a2);
+//    info("Executing [SUBRR] on %p %p\n", bs->a1, bs->a2);
     *((uintptr_t *)bs->a1) -= *((uintptr_t *)bs->a2);
     NEXTI;
 subrc:
-    info("Executing [SUBRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [SUBRC] on %p %lu\n", bs->a1, (uintptr_t)bs->a2);
     *((uintptr_t *)bs->a1) -= (uintptr_t)bs->a2;
     NEXTI;
 
@@ -121,18 +156,18 @@ jmpcalc:
     if(target == NULL) {
         fatal("Can't jump to label: [%s] because it doesn't exist.\n", 7, label);
     }
-    info("Jumping to: %p\n", target);
+//    info("Jumping to: %p\n", target);
     bs = target;
     goto *bs->instr;
 
 new:
-    *((uintptr_t *)bs->a1) = (uintptr_t)malloc(((uintptr_t)bs->a2) * sizeof (void *));
-    info("Executing [NEW] object at %p in %p size %lu\n",
-         *((uintptr_t *)bs->a1), bs->a1, (uintptr_t)bs->a2);
+    *((uintptr_t *)bs->a1) = (uintptr_t)GC_MALLOC(((uintptr_t)bs->a2) * sizeof (void *));
+//    info("Executing [NEW] object at %p in %p size %lu\n",
+//         *((uintptr_t *)bs->a1), bs->a1, (uintptr_t)bs->a2);
     NEXTI;
     
 exit:
-    info("CVM got EXIT @ %p\n", bs);
+//    info("CVM got EXIT @ %p\n", bs);
     destroy_module(module);
     map_destroy(m);
     return;

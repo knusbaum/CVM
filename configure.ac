@@ -12,6 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 
 # Checks for libraries.
+AC_CHECK_LIB(gc, [GC_malloc], [], [AC_MSG_ERROR([library 'gc' is required. See http://www.hboehm.info/gc/])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h])

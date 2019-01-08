@@ -1,8 +1,9 @@
 #include <stdio.h>
+#include "gc.h"
 #include "errors.h"
 #include "map.h"
 //#include "lexer.h"
- //#include "parser.h"
+#include "parser.h"
 #include "vm.h"
 
 int main(void) {
@@ -16,7 +17,9 @@ int main(void) {
 //
 //    parse_module("test.cvm", m);
 
+    GC_INIT();
     run_module("test.cvm");
     info("CVM finished. Dumping registers.\n");
     dump_regs();
+    info("Size of binstr: %d\n", sizeof (struct binstr));
 }

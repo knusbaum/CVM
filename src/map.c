@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include "gc.h"
 #include "map.h"
 
 typedef struct map_t {
@@ -11,15 +12,15 @@ typedef struct map_t {
 
 void increase_map_space(map_t *m) {
     m->space *= 2;
-    m->keys = realloc(m->keys, sizeof(char **) * m->space);
-    m->vals = realloc(m->vals, sizeof(void **) * m->space);
+    m->keys = GC_REALLOC(m->keys, sizeof(char **) * m->space);
+    m->vals = GC_REALLOC(m->vals, sizeof(void **) * m->space);
 }
 
 #define INITIAL_SPACE 8
 map_t *map_create() {
-    map_t *m = malloc(sizeof (map_t));
-    m->keys = malloc(sizeof (char **) * INITIAL_SPACE);
-    m->vals = malloc(sizeof (void **) * INITIAL_SPACE);
+    map_t *m = GC_MALLOC(sizeof (map_t));
+    m->keys = GC_MALLOC(sizeof (char **) * INITIAL_SPACE);
+    m->vals = GC_MALLOC(sizeof (void **) * INITIAL_SPACE);
     m->count = 0;
     m->space = INITIAL_SPACE;
     return m;
@@ -76,7 +77,7 @@ int map_present(map_t *m, char *key) {
 }
 
 void map_destroy(map_t *m) {
-    free(m->keys);
-    free(m->vals);
-    free(m);
+//    free(m->keys);
+//    free(m->vals);
+//    free(m);
 }

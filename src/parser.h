@@ -2,6 +2,8 @@ struct binstr {
     void *instr;
     void *a1;
     void *a2;
+    size_t offset;
+    size_t offset2;
 };
 
 struct parsed_struct {

@@ -130,6 +130,15 @@ START_TEST(test_map_null_key)
 }
 END_TEST
 
+START_TEST(test_map_key_present)
+{
+    map_t *m = map_create();
+    map_put(m, "hello", m);
+    ck_assert_msg(map_present(m, "hello"),
+                  "GET didn't return NULL for NULL key.");
+}
+END_TEST
+
 TCase *map_testcases() {
     TCase *tc = tcase_create("Maps");
 
@@ -141,5 +150,6 @@ TCase *map_testcases() {
     tcase_add_test(tc, test_map_delete);
     tcase_add_test(tc, test_big_map_delete_get);
     tcase_add_test(tc, test_map_null_key);
+    tcase_add_test(tc, test_map_key_present);
     return tc;
 }
