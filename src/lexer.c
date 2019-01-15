@@ -14,6 +14,12 @@ unsigned long char_number;
 static void get_char(FILE *f) {
     look = fgetc(f);
 
+    if(look == '#') {
+        do {
+            look = fgetc(f);
+        } while (look != '\n');
+    }
+    
     char_number++;
     if(look == '\n') {
         line_number++;
@@ -49,13 +55,13 @@ static void consume_space(FILE *f) {
     }
 }
 
-static void consume_line(FILE *f) {
-    while(look != '\n'
-          && look != EOF) {
-        get_char(f);
-    }
-    consume_whitespace(f);
-}
+//static void consume_line(FILE *f) {
+//    while(look != '\n'
+//          && look != EOF) {
+//        get_char(f);
+//    }
+//    consume_whitespace(f);
+//}
 
 #define PBSIZE 1025
 
@@ -179,9 +185,9 @@ static void apply_type(lexed_instr *instr) {
 static void lex_struct(lexed_struct *s, FILE *f) {
     while(1) {
         consume_whitespace(f);
-        while(look == '#') {
-            consume_line(f);
-        }
+//        while(look == '#') {
+//            consume_line(f);
+//        }
         if(look == EOF) {
             return;
         }
@@ -210,9 +216,9 @@ static void next_instruction(lexed_instr *i, FILE *f) {
     i->arg2 = NULL;
 
     consume_whitespace(f);
-    while(look == '#') {
-        consume_line(f);
-    }
+//    while(look == '#') {
+//        consume_line(f);
+//    }
     if(look == EOF) {
         return;
     }

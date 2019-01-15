@@ -1,0 +1,18 @@
+module teststack
+
+export start
+
+start:
+    call tester
+    exit
+
+
+tester:
+    mov R0 SP
+    push $1
+    push $2
+    push $3
+
+    mov SP R0 ## We can restore the stack pointer so we can return without fear.
+    ret
+    
