@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "gc.h"
 #include "errors.h"
 #include "map.h"
-#include "vm.h"
 #include "parser.h"
+#include "vm.h"
 
 // Registers
 //uintptr_t R0;
@@ -20,6 +21,9 @@
 //uintptr_t R10;
 //uintptr_t R11;
 //uintptr_t R12;
+
+//static void *module_call_lookup(char *label);
+static void register_module(struct module *module);
 
 #define STACKSIZE 1024
 
@@ -63,7 +67,7 @@ map_t *get_registers() {
     map_put(m, "R11", (void *)R11);
     map_put(m, "R12", (void *)R12);
     map_put(m, "IP",  (void *)IP);
-    map_put(m, "SP",  (void *)SP);    
+    map_put(m, "SP",  (void *)SP);
     return m;
 }
 
@@ -94,63 +98,80 @@ void dump_regs() {
 //struct binstr *bs;
 #define bs ((struct binstr *)registers[IP])
 #define lbs (registers[IP])
-void run_module(char *filename) {
-    char *label;
+map_t *regmap;
+
+static void __vm(struct module *module, map_t **vm_map) {
+    //char *label;
     void *target;
     uintptr_t *ob, *ob2;
 
-    map_t *m = get_registers();
-    map_put(m, "movrr", &&movrr);
-    map_put(m, "movrc", &&movrc);
-    map_put(m, "movro", &&movro);
-    map_put(m, "movor", &&movor);
-    map_put(m, "movoc", &&movoc);
-    map_put(m, "movoo", &&movoo);
+    if(vm_map != NULL) {
+        if(regmap != NULL) {
+            *vm_map = regmap;
+            return;
+        }
+        regmap = get_registers();
+        map_put(regmap, "movrr", &&movrr);
+        map_put(regmap, "movrc", &&movrc);
+        map_put(regmap, "movro", &&movro);
+        map_put(regmap, "movor", &&movor);
+        map_put(regmap, "movoc", &&movoc);
+        map_put(regmap, "movoo", &&movoo);
 
-    // Integer arithmetic
-    map_put(m, "incr", &&incr);
-    map_put(m, "cmprr", &&cmprr);
-    map_put(m, "cmprc", &&cmprc);
-    map_put(m, "addrr", &&addrr);
-    map_put(m, "addrc", &&addrc);
-    map_put(m, "subrr", &&subrr);
-    map_put(m, "subrc", &&subrc);
+        // Integer arithmetic
+        map_put(regmap, "incr", &&incr);
+        map_put(regmap, "cmprr", &&cmprr);
+        map_put(regmap, "cmprc", &&cmprc);
+        map_put(regmap, "addrr", &&addrr);
+        map_put(regmap, "addrc", &&addrc);
+        map_put(regmap, "subrr", &&subrr);
+        map_put(regmap, "subrc", &&subrc);
 
-    // Jumps
-    map_put(m, "jmpcalc", &&jmpcalc);
-    map_put(m, "jecalc", &&jecalc);
-    map_put(m, "jnecalc", &&jnecalc);
-    map_put(m, "jgcalc", &&jgcalc);
-    map_put(m, "jgecalc", &&jgecalc);
-    map_put(m, "jlcalc", &&jlcalc);
-    map_put(m, "jlecalc", &&jlecalc);
-    map_put(m, "jmpr", &&jmpr);
-    map_put(m, "jer", &&jer);
-    map_put(m, "jner", &&jner);
-    map_put(m, "jgr", &&jgr);
-    map_put(m, "jger", &&jger);
-    map_put(m, "jlr", &&jlr);
-    map_put(m, "jler", &&jler);
-    
-    map_put(m, "new", &&new);
-    map_put(m, "pushr", &&pushr);
-    map_put(m, "pushc", &&pushc);
-    map_put(m, "popr", &&popr);
+        // Jumps
+//        map_put(regmap, "jmpcalc", &&jmpcalc);
+//        map_put(regmap, "jecalc", &&jecalc);
+//        map_put(regmap, "jnecalc", &&jnecalc);
+//        map_put(regmap, "jgcalc", &&jgcalc);
+//        map_put(regmap, "jgecalc", &&jgecalc);
+//        map_put(regmap, "jlcalc", &&jlcalc);
+//        map_put(regmap, "jlecalc", &&jlecalc);
 
-    map_put(m, "call", &&call);
-    map_put(m, "ret", &&ret);
-    
-    map_put(m, "dumpreg", &&dumpreg);
-    map_put(m, "exit", &&exit);
+        map_put(regmap, "jmp", &&jmp);
+        map_put(regmap, "je", &&je);
+        map_put(regmap, "jne", &&jne);
+        map_put(regmap, "jg", &&jg);
+        map_put(regmap, "jge", &&jge);
+        map_put(regmap, "jl", &&jl);
+        map_put(regmap, "jle", &&jle);
 
-    registers[SP] = stack;
+        map_put(regmap, "jmpr", &&jmpr);
+        map_put(regmap, "jer", &&jer);
+        map_put(regmap, "jner", &&jner);
+        map_put(regmap, "jgr", &&jgr);
+        map_put(regmap, "jger", &&jger);
+        map_put(regmap, "jlr", &&jlr);
+        map_put(regmap, "jler", &&jler);
 
-    struct module *module = parse_module(filename, m);
-    lbs = (uintptr_t)module->binstrs;
+        map_put(regmap, "new", &&new);
+        map_put(regmap, "pushr", &&pushr);
+        map_put(regmap, "pushc", &&pushc);
+        map_put(regmap, "popr", &&popr);
 
-    info("Successfully loaded module %s. Running...\n", module->modname);
+//        map_put(regmap, "rcall", &&rcall);
+        map_put(regmap, "call", &&call);
+        map_put(regmap, "ret", &&ret);
+
+        map_put(regmap, "dumpreg", &&dumpreg);
+        map_put(regmap, "exit", &&exit);
+        *vm_map = regmap;
+        return;
+    }
+
+    // Initialize the stack.
     info("Stack starts at %p\n", stack);
+    registers[SP] = (uintptr_t)stack;
 
+    // Set the initial instruction pointer.
     target = map_get(module->labels, "start");
     if(target == NULL) {
         fatal("Cannot run module %s. label start not present.\n",
@@ -158,6 +179,8 @@ void run_module(char *filename) {
     }
     info("Beginning execution at start label %p\n", target);
     lbs = (uintptr_t)target;
+
+    // Begin execution.
     goto *bs->instr;
     return;
 
@@ -254,40 +277,40 @@ subrc:
     registers[bs->a1] -= bs->constant;
     NEXTI;
 
-jmpcalc:
-    bs->instr = &&jmp;
-docalc:
-    label = bs->label;
-    target = map_get(module->labels, label);
-    if(target == NULL) {
-        fatal("Can't jump to label: [%s] because it doesn't exist.\n", 7, label);
-    }
-    bs->target = target;
-    goto *bs->instr;
-
-jecalc:
-    bs->instr = &&je;
-    goto docalc;
-
-jnecalc:
-    bs->instr = &&jne;
-    goto docalc;
-
-jgcalc:
-    bs->instr = &&jg;
-    goto docalc;
-
-jgecalc:
-    bs->instr = &&jge;
-    goto docalc;
-
-jlcalc:
-    bs->instr = &&jl;
-    goto docalc;
-
-jlecalc:
-    bs->instr = &&jle;
-    goto docalc;
+//jmpcalc:
+//    bs->instr = &&jmp;
+//docalc:
+//    label = bs->label;
+//    target = map_get(module->labels, label);
+//    if(target == NULL) {
+//        fatal("Can't jump to label: [%s] because it doesn't exist.\n", 7, label);
+//    }
+//    bs->target = target;
+//    goto *bs->instr;
+//
+//jecalc:
+//    bs->instr = &&je;
+//    goto docalc;
+//
+//jnecalc:
+//    bs->instr = &&jne;
+//    goto docalc;
+//
+//jgcalc:
+//    bs->instr = &&jg;
+//    goto docalc;
+//
+//jgecalc:
+//    bs->instr = &&jge;
+//    goto docalc;
+//
+//jlcalc:
+//    bs->instr = &&jl;
+//    goto docalc;
+//
+//jlecalc:
+//    bs->instr = &&jle;
+//    goto docalc;
 
 jmpr:
     bs->target = (void *)registers[bs->a1];
@@ -377,7 +400,7 @@ new:
 pushr:
     *((uintptr_t *)registers[SP]) = registers[bs->a1];
     registers[SP]+=(sizeof (uintptr_t));
-    if(registers[SP] > stack + STACKSIZE) {
+    if(registers[SP] > (uintptr_t)(stack + STACKSIZE)) {
         fatal("Blew the stack.\n", 20);
     }
     NEXTI;
@@ -385,7 +408,7 @@ pushr:
 pushc:
     *((uintptr_t *)registers[SP]) = bs->constant;
     registers[SP]+=(sizeof (uintptr_t));
-    if(registers[SP] > stack + STACKSIZE) {
+    if(registers[SP] > (uintptr_t)(stack + STACKSIZE)) {
         fatal("Blew the stack.\n", 20);
     }
     NEXTI;
@@ -396,27 +419,30 @@ popr:
     *((uintptr_t *)registers[SP]) = 0; // Clear the stack for GC
     NEXTI;
 
-call:
-//    info("Executing [CALL] to label %s\n", bs->label);
-    *((uintptr_t *)registers[SP]) = bs + 1; //(sizeof (struct binstr));
-    registers[SP]+=(sizeof (uintptr_t));
-    label = bs->label;
-    target = map_get(module->labels, label);
-    if(target == NULL) {
-        fatal("Can't call label: [%s] because it doesn't exist.\n", 7, label);
-    }
-    bs->instr = &&calloptim;
-    bs->target = target;
-    lbs = (uintptr_t)target;
-    goto *bs->instr;
-    NEXTI;
+//rcall:
+////    info("Executing [CALL] to label %s\n", bs->label);
+//    *((uintptr_t *)registers[SP]) = (uintptr_t)(bs + 1); //(sizeof (struct binstr));
+//    registers[SP]+=(sizeof (uintptr_t));
+//    label = bs->label;
+//    target = map_get(module->labels, label);
+//    if(target == NULL) {
+//        target = module_call_lookup(label);
+//        //fatal("Can't call label: [%s] because it doesn't exist.\n", 7, label);
+//    }
+//    bs->instr = &&rcalloptim;
+//    bs->target = target;
+//    lbs = (uintptr_t)target;
+//    goto *bs->instr;
+//    NEXTI;
 
-calloptim:
-    *((uintptr_t *)registers[SP]) = bs + 1; //(sizeof (struct binstr));
+call:
+//rcalloptim:
+    *((uintptr_t *)registers[SP]) = (uintptr_t)(bs + 1); //(sizeof (struct binstr));
     registers[SP]+=(sizeof (uintptr_t));
-    lbs = (uintptr_t)target;
+    lbs = (uintptr_t)bs->target;
     goto *bs->instr;
-    
+
+
 ret:
     registers[SP]-=(sizeof (uintptr_t));
     lbs = *((uintptr_t *)registers[SP]);
@@ -424,13 +450,65 @@ ret:
     *((uintptr_t *)registers[SP]) = 0; // Clear the stack for GC
     goto *bs->instr;
     NEXTI;
-    
+
 dumpreg:
-    printf("R%d: %ld\n", bs->a1, registers[bs->a1]);
+    printf("R%d: %.16lX\n", bs->a1, registers[bs->a1]);
     NEXTI;
 exit:
 //    info("CVM got EXIT @ %p\n", bs);
-    destroy_module(module);
-    map_destroy(m);
     return;
 }
+
+struct module *load_module(char *filename) {
+    map_t *vm_map;
+    __vm(NULL, &vm_map);
+    struct module *module = parse_module(filename, vm_map);
+    register_module(module);
+    info("Successfully loaded module %s.\n", module->modname);
+    return module;
+}
+
+void run_module(struct module *module) {
+    //struct module *module = load_module(filename);
+    info("Running module %s\n", module->modname);
+    __vm(module, NULL);
+    destroy_module(module);
+    //map_destroy(m);
+}
+
+map_t *module_registry;
+
+static void register_module(struct module *module) {
+    if(module_registry == NULL) {
+        module_registry = map_create();
+    }
+    map_put(module_registry, module->modname, module);
+}
+
+struct module *lookup_module(char *modname) {
+    if(module_registry == NULL) {
+        return NULL;
+    }
+    return map_get(module_registry, modname);
+}
+
+//static void *module_call_lookup(char *label) {
+//    char modname[1024]; // Static size is bad. Can cause overruns. Do something smarter here.
+//    char target_label[1024];
+//    int ret = sscanf(label, "%[^.].%s", modname, target_label);
+//    if(ret != 2) {
+//        fatal("1Can't call label: [%s] because it doesn't exist.\n", 7, label);
+//    }
+//    struct module *module = lookup_module(modname);
+//    if(module == NULL) {
+//        fatal("2Can't call label: [%s] because it doesn't exist.\n", 7, label);
+//    }
+//
+//    void *target = map_get(module->labels, target_label);
+//    if(target == NULL) {
+//        fatal("3Can't call label: [%s] because it doesn't exist.\n", 7, label);
+//    }
+//    info("Found remote target @ %p\n", target);
+//    return target;
+//
+//}

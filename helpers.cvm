@@ -1,0 +1,8 @@
+module helpers
+
+export foo
+
+foo:
+    mov R0 $10
+    ret
+    

@@ -22,7 +22,8 @@ enum token_type {
     DUMPREG,
     NEW,
     CALL,
-    RET
+    RET,
+    IMPORT
 };
 
 typedef struct lexed_member {

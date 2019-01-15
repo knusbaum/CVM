@@ -1,0 +1,14 @@
+## The test4 module is designed to test module importing, cross-module
+## operations, and the like.
+
+module test4
+
+import helpers.cvm
+
+export start
+
+start:
+    call helpers.foo
+    dumpreg R0
+    exit
+    

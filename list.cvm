@@ -1,0 +1,74 @@
+## The list module contains code to create and operate on a linked list.
+module list
+
+struct node
+    next
+    val
+endstruct
+
+struct list
+    head
+endstruct
+
+
+export create
+export dump
+export push
+export pop
+export length
+
+
+create:
+    new R0 list
+    mov R0(list.head) 0x0
+    ret
+
+## list in R0
+dump:
+    mov R1 R0(list.head)
+
+dumploop:
+    mov R2 R1(node.val)
+    dumpreg R2
+    mov R1 R1(node.next)
+    cmp R1 0x0
+    jne dumploop
+
+    ret
+
+## list in R0
+## New value in R1
+push:
+    new R2 node
+    mov R2(node.val) R1
+    mov R2(node.next) R0(list.head)
+    mov R0(list.head) R2
+
+    ret
+
+## list in R0
+## returns value in R0
+pop:
+    mov R1 R0(list.head)
+    mov R0(list.head) R1(node.next)
+    mov R0 R1(node.val)
+
+    ret
+
+## list in R0
+## returns length in R0
+length:
+    mov R12 0x600E
+    mov R1 R0(list.head)
+
+    mov R2 $0
+loop:
+    inc R2
+    mov R1 R1(node.next)
+    cmp R1 0x0
+    jne loop
+
+    mov R0 R2
+
+    ret
+    

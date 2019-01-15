@@ -28,7 +28,9 @@ int main(int argc, char **argv) {
     }
     
     GC_INIT();
-    run_module(argv[1]);
+    struct module *module = load_module(argv[1]);
+//    load_module("helpers.cvm");
+    run_module(module);
     info("CVM finished. Dumping registers.\n");
     dump_regs();
     info("Size of binstr: %d\n", sizeof (struct binstr));

@@ -1,0 +1,27 @@
+module testlist
+
+import list.cvm
+
+export start
+
+start:
+    call list.create
+
+    mov R1 $1
+    call list.push
+
+    mov R1 $2
+    call list.push
+
+    mov R1 $3
+    call list.push
+
+    push R0
+    call list.length
+    dumpreg R0
+
+    pop R0
+    call list.dump
+
+    exit
+    

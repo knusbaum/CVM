@@ -7,6 +7,16 @@
 #include "lexer.h"
 #include "map.h"
 #include "parser.h"
+#include "vm.h"
+
+#define JMPCALC 0x1
+#define JECALC 0x2
+#define JNECALC 0x3
+#define JGCALC 0x4
+#define JGECALC 0x5
+#define JLCALC 0x6
+#define JLECALC 0x7
+#define CALLCALC 0x8
 
 static void translate_instruction(struct module *m, lexed_instr *instr, struct binstr *b);
 static void ensure_export_space(struct module *m);
@@ -18,8 +28,10 @@ static void ensure_two_arg(struct module *m, lexed_instr *instr);
 static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *bin);
 static uintptr_t parse_arg(struct module *m, char *arg, unsigned long line);
 static void *get_instr(struct module *m, int line, char * instr);
+static void calculate_jumps(struct module *m);
 
 struct module *parse_module(char * filename, map_t *instrs_regs) {
+    info("LOADING MODULE %s with vm map @ %p\n", filename, instrs_regs);
     lexed_instr *instrs_p = lex_module(filename);
     lexed_instr *instrs = instrs_p;
     struct module *m = GC_MALLOC(sizeof (struct module));
@@ -45,6 +57,9 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
         }
         instrs++;
     }
+
+    calculate_jumps(m);
+
     info("MODULE [%s] exports: [\n", m->filename);
     for(int i = 0; i < m->export_count; i++) {
         info("\t%s\n", m->exports[i]);
@@ -78,13 +93,13 @@ static void add_structure(struct module *m, lexed_instr *instr) {
     map_put(m->structures, instr->arg1, structure);
 }
 
-static void parse_jump(char *reginstr, char *calcinstr, struct module *m, lexed_instr *instr, struct binstr *b) {
+static void parse_jump(char *reginstr, uintptr_t calcinstr, struct module *m, lexed_instr *instr, struct binstr *b) {
     if(map_present(m->instrs_regs, instr->arg1)) {
         b->instr = get_instr(m, instr->line, reginstr);
         b->a1 = map_get(m->instrs_regs, instr->arg1);
     }
     else {
-        b->instr = get_instr(m, instr->line, calcinstr);
+        b->instr = calcinstr; //get_instr(m, instr->line, calcinstr);
         char *label = GC_MALLOC(strlen(instr->arg1));
         strcpy(label, instr->arg1);
         b->label = label;
@@ -151,66 +166,31 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         break;
     case JMP:
         ensure_one_arg(m, instr);
-        parse_jump("jmpr", "jmpcalc", m, instr, b);
-//        if(map_present(m->instrs_regs, instr->arg1)) {
-//            b->instr = get_instr(m, instr->line, "jmpr");
-//            b->a1 = map_get(m->instrs_regs, instr->arg1);
-//        }
-//        else {
-//            b->instr = get_instr(m, instr->line, "jmpcalc");
-//            label = GC_MALLOC(strlen(instr->arg1));
-//            strcpy(label, instr->arg1);
-//            b->label = label;
-//        }
-        info("JUMP: instr->instr: %s\n", instr->instr);
+        parse_jump("jmpr", JMPCALC, m, instr, b);
         break;
     case JE:
         ensure_one_arg(m, instr);
-        parse_jump("jer", "jecalc", m, instr, b);
-//        b->instr = get_instr(m, instr->line, "jecalc");
-//        label = GC_MALLOC(strlen(instr->arg1));
-//        strcpy(label, instr->arg1);
-//        b->label = label;
+        parse_jump("jer", JECALC, m, instr, b);
         break;
     case JNE:
         ensure_one_arg(m, instr);
-        parse_jump("jner", "jnecalc", m, instr, b);
-//        b->instr = get_instr(m, instr->line, "jnecalc");
-//        label = GC_MALLOC(strlen(instr->arg1));
-//        strcpy(label, instr->arg1);
-//        b->label = label;
+        parse_jump("jner", JNECALC, m, instr, b);
         break;
     case JG:
         ensure_one_arg(m, instr);
-        parse_jump("jgr", "jgcalc", m, instr, b);
-//        b->instr = get_instr(m, instr->line, "jgcalc");
-//        label = GC_MALLOC(strlen(instr->arg1));
-//        strcpy(label, instr->arg1);
-//        b->label = label;
+        parse_jump("jgr", JGCALC, m, instr, b);
         break;
     case JGE:
         ensure_one_arg(m, instr);
-        parse_jump("jger", "jgecalc", m, instr, b);
-//        b->instr = get_instr(m, instr->line, "jgecalc");
-//        label = GC_MALLOC(strlen(instr->arg1));
-//        strcpy(label, instr->arg1);
-//        b->label = label;
+        parse_jump("jger", JGECALC, m, instr, b);
         break;
     case JL:
         ensure_one_arg(m, instr);
-        parse_jump("jlr", "jlcalc", m, instr, b);
-//        b->instr = get_instr(m, instr->line, "jlcalc");
-//        label = GC_MALLOC(strlen(instr->arg1));
-//        strcpy(label, instr->arg1);
-//        b->label = label;
+        parse_jump("jlr", JLCALC, m, instr, b);
         break;
     case JLE:
         ensure_one_arg(m, instr);
-        parse_jump("jler", "jlecalc", m, instr, b);
-//        b->instr = get_instr(m, instr->line, "jlecalc");
-//        label = GC_MALLOC(strlen(instr->arg1));
-//        strcpy(label, instr->arg1);
-//        b->label = label;
+        parse_jump("jler", JLECALC, m, instr, b);
         break;
     case STRUCT:
         ensure_two_arg(m, instr);
@@ -267,7 +247,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         break;
     case CALL:
         ensure_one_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "call");
+        b->instr = CALLCALC; //get_instr(m, instr->line, "rcall");
         char *label = GC_MALLOC(strlen(instr->arg1));
         strcpy(label, instr->arg1);
         b->label = label;
@@ -275,6 +255,10 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
     case RET:
         ensure_zero_arg(m, instr);
         b->instr = get_instr(m, instr->line, "ret");
+        break;
+    case IMPORT:
+        ensure_one_arg(m, instr);
+        load_module(instr->arg1);
         break;
     case DATA:
     default:
@@ -295,7 +279,7 @@ static void ensure_export_space(struct module *m) {
 
     if(m->export_count == m->export_space) {
         m->export_space *= 2;
-        m->exports = realloc(m->exports, sizeof (char **) * m->export_space);
+        m->exports = GC_REALLOC(m->exports, sizeof (char **) * m->export_space);
     }
 }
 
@@ -418,6 +402,84 @@ static uintptr_t parse_arg(struct module *m, char *arg, unsigned long line) {
               8, line, arg);
     }
     return x;
+}
+
+static void *module_call_lookup(char *label) {
+    char modname[1024]; // Static size is bad. Can cause overruns. Do something smarter here.
+    char target_label[1024];
+    int ret = sscanf(label, "%[^.].%s", modname, target_label);
+    if(ret != 2) {
+        fatal("1Can't call label: [%s] because it doesn't exist.\n", 7, label);
+    }
+    struct module *module = lookup_module(modname);
+    if(module == NULL) {
+        fatal("2Can't call label: [%s] because it doesn't exist.\n", 7, label);
+    }
+
+    void *target = map_get(module->labels, target_label);
+    if(target == NULL) {
+        fatal("3Can't call label: [%s] because it doesn't exist.\n", 7, label);
+    }
+    info("Found remote target @ %p\n", target);
+    return target;
+
+}
+
+static void calculate_jump(struct module *m, struct binstr *bs) {
+
+    struct binstr *target;
+    if(bs->instr == JMPCALC) {
+        bs->instr = get_instr(m, 0, "jmp");
+        target = map_get(m->labels, bs->label);
+        bs->target = target;
+    }
+    else if(bs->instr == JECALC) {
+        bs->instr = get_instr(m, 0, "je");
+        target = map_get(m->labels, bs->label);
+        bs->target = target;
+    }
+    else if(bs->instr == JNECALC) {
+        bs->instr = get_instr(m, 0, "jne");
+        target = map_get(m->labels, bs->label);
+        bs->target = target;
+    }
+    else if(bs->instr == JGCALC) {
+        bs->instr = get_instr(m, 0, "jg");
+        target = map_get(m->labels, bs->label);
+        bs->target = target;
+    }
+    else if(bs->instr == JGECALC) {
+        bs->instr = get_instr(m, 0, "jge");
+        target = map_get(m->labels, bs->label);
+        bs->target = target;
+    }
+    else if(bs->instr == JLCALC) {
+        bs->instr = get_instr(m, 0, "jl");
+        target = map_get(m->labels, bs->label);
+        bs->target = target;
+    }
+    else if(bs->instr == JLECALC) {
+        bs->instr = get_instr(m, 0, "jle");
+        target = map_get(m->labels, bs->label);
+        bs->target = target;
+    }
+    else if(bs->instr == CALLCALC) {
+        target = map_get(m->labels, bs->label);
+        if(target == NULL) {
+            bs->target = module_call_lookup(bs->label);
+            bs->instr = get_instr(m, 0, "call");
+        }
+        else {
+            bs->instr = get_instr(m, 0, "call");
+            bs->target = target;
+        }
+    }
+}
+
+static void calculate_jumps(struct module *m) {
+    for(int i = 0; i < m->binstr_count; i++) {
+        calculate_jump(m, m->binstrs + i);
+    }
 }
 
 void destroy_module(struct module *m) {

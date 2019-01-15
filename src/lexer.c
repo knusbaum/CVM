@@ -168,6 +168,9 @@ static void apply_type(lexed_instr *instr) {
     else if(strcmp(lexbuff, "ret") == 0) {
         instr->type = RET;
     }
+    else if(strcmp(lexbuff, "import") == 0) {
+        instr->type = IMPORT;
+    }
     else {
         instr->type = LABEL;
     }
