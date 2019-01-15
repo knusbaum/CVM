@@ -13,7 +13,7 @@ typedef struct linked_node {
     int val;
 } linked_node;
 
-int main(void) {
+int main(int argc, char **argv) {
 
 //    map_t *m = map_create();
 //    map_put(m, "movrr", (void *)0x1001);
@@ -23,9 +23,12 @@ int main(void) {
 //    map_put(m, "R3", (void *)0x03);
 //
 //    parse_module("test.cvm", m);
-
+    if(argc != 2) {
+        fatal("Expected a module file as an argument.\n", 10);
+    }
+    
     GC_INIT();
-    run_module("test.cvm");
+    run_module(argv[1]);
     info("CVM finished. Dumping registers.\n");
     dump_regs();
     info("Size of binstr: %d\n", sizeof (struct binstr));

@@ -41,7 +41,13 @@ endstruct
 
 export start
 
+fail:
+    mov R12 0xBAD
+    dumpreg R12
+    exit
+
 start:
+    dumpreg IP
 ## Integer comparison
     mov R1 $10
     cmp R1 $10
@@ -124,9 +130,4 @@ feedbacc:
 
     exit
 
-
-fail:
-    mov R12 0xBAD
-    dumpreg R12
-    exit
     

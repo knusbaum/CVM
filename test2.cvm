@@ -1,0 +1,44 @@
+module test2
+
+export start
+
+start:
+
+    dumpreg IP
+
+    mov R0 $0
+
+    mov R1 IP
+    inc R0
+    dumpreg R0
+    cmp R0 $10
+    jne R1
+
+    mov R1 IP
+    add R0 $-1
+    dumpreg R0
+    cmp R0 $0
+    jg R1
+
+    dumpreg SP
+    push $1
+    push $2
+    push $3
+    dumpreg SP
+
+    pop R4
+    pop R5
+    pop R6
+    dumpreg SP
+
+    call end
+    mov R11 0x600D
+    
+    exit
+
+end:
+    mov R12 0x600D
+    dumpreg SP
+    ret
+    exit
+    

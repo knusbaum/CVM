@@ -159,6 +159,15 @@ static void apply_type(lexed_instr *instr) {
     else if(strcmp(lexbuff, "new") == 0) {
         instr->type = NEW;
     }
+    else if(strcmp(lexbuff, "push") == 0) {
+        instr->type = NEW;
+    }
+    else if(strcmp(lexbuff, "call") == 0) {
+        instr->type = CALL;
+    }
+    else if(strcmp(lexbuff, "ret") == 0) {
+        instr->type = RET;
+    }
     else {
         instr->type = LABEL;
     }

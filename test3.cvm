@@ -1,0 +1,30 @@
+module test3
+
+export start
+
+start:
+    dumpreg SP
+    call foo
+    dumpreg SP
+
+    mov R12 0x600D
+    exit
+
+
+
+foo:
+    dumpreg SP
+    call bar
+    ret
+
+
+bar:
+    dumpreg SP
+    inc R0
+    cmp R0 $3
+    je return
+    call bar
+return:
+    ret
+
+

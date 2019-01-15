@@ -20,7 +20,9 @@ enum token_type {
     LABEL,
     STRUCT,
     DUMPREG,
-    NEW
+    NEW,
+    CALL,
+    RET
 };
 
 typedef struct lexed_member {

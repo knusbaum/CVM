@@ -52,9 +52,10 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     info("]\n");
     info("instructions: [\n");
     for(int i = 0; i < m->binstr_count; i++) {
-        info("\t%p: { %p, %p, %p }\n",
+        info("\t%p: { instr: %p, a1: %x, a2: %x, offset: %.16lX extra: %.16lx}\n",
              m->binstrs + i,
-             m->binstrs[i].instr, m->binstrs[i].a1, m->binstrs[i].a2);
+             m->binstrs[i].instr, m->binstrs[i].a1, m->binstrs[i].a2,
+             m->binstrs[i].offset, m->binstrs[i].constant);
     }
     info("]\n");
     lex_destroy(instrs_p);
@@ -77,10 +78,25 @@ static void add_structure(struct module *m, lexed_instr *instr) {
     map_put(m->structures, instr->arg1, structure);
 }
 
+static void parse_jump(char *reginstr, char *calcinstr, struct module *m, lexed_instr *instr, struct binstr *b) {
+    if(map_present(m->instrs_regs, instr->arg1)) {
+        b->instr = get_instr(m, instr->line, reginstr);
+        b->a1 = map_get(m->instrs_regs, instr->arg1);
+    }
+    else {
+        b->instr = get_instr(m, instr->line, calcinstr);
+        char *label = GC_MALLOC(strlen(instr->arg1));
+        strcpy(label, instr->arg1);
+        b->label = label;
+    }
+}
+
 static void translate_instruction(struct module *m, lexed_instr *instr, struct binstr *b) {
     b->instr = NULL;
     b->a1 = 0;
     b->a2 = 0;
+    b->offset = 0;
+    b->constant = 0;
 
     char *label;
     switch(instr->type) {
@@ -135,53 +151,66 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         break;
     case JMP:
         ensure_one_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "jmpcalc");
-        label = GC_MALLOC(strlen(instr->arg1));
-        strcpy(label, instr->arg1);
-        b->label = label;
+        parse_jump("jmpr", "jmpcalc", m, instr, b);
+//        if(map_present(m->instrs_regs, instr->arg1)) {
+//            b->instr = get_instr(m, instr->line, "jmpr");
+//            b->a1 = map_get(m->instrs_regs, instr->arg1);
+//        }
+//        else {
+//            b->instr = get_instr(m, instr->line, "jmpcalc");
+//            label = GC_MALLOC(strlen(instr->arg1));
+//            strcpy(label, instr->arg1);
+//            b->label = label;
+//        }
         info("JUMP: instr->instr: %s\n", instr->instr);
         break;
     case JE:
         ensure_one_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "jecalc");
-        label = GC_MALLOC(strlen(instr->arg1));
-        strcpy(label, instr->arg1);
-        b->label = label;
+        parse_jump("jer", "jecalc", m, instr, b);
+//        b->instr = get_instr(m, instr->line, "jecalc");
+//        label = GC_MALLOC(strlen(instr->arg1));
+//        strcpy(label, instr->arg1);
+//        b->label = label;
         break;
     case JNE:
         ensure_one_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "jnecalc");
-        label = GC_MALLOC(strlen(instr->arg1));
-        strcpy(label, instr->arg1);
-        b->label = label;
+        parse_jump("jner", "jnecalc", m, instr, b);
+//        b->instr = get_instr(m, instr->line, "jnecalc");
+//        label = GC_MALLOC(strlen(instr->arg1));
+//        strcpy(label, instr->arg1);
+//        b->label = label;
         break;
     case JG:
         ensure_one_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "jgcalc");
-        label = GC_MALLOC(strlen(instr->arg1));
-        strcpy(label, instr->arg1);
-        b->label = label;
+        parse_jump("jgr", "jgcalc", m, instr, b);
+//        b->instr = get_instr(m, instr->line, "jgcalc");
+//        label = GC_MALLOC(strlen(instr->arg1));
+//        strcpy(label, instr->arg1);
+//        b->label = label;
         break;
     case JGE:
         ensure_one_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "jgecalc");
-        label = GC_MALLOC(strlen(instr->arg1));
-        strcpy(label, instr->arg1);
-        b->label = label;
+        parse_jump("jger", "jgecalc", m, instr, b);
+//        b->instr = get_instr(m, instr->line, "jgecalc");
+//        label = GC_MALLOC(strlen(instr->arg1));
+//        strcpy(label, instr->arg1);
+//        b->label = label;
         break;
     case JL:
         ensure_one_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "jlcalc");
-        label = GC_MALLOC(strlen(instr->arg1));
-        strcpy(label, instr->arg1);
-        b->label = label;
+        parse_jump("jlr", "jlcalc", m, instr, b);
+//        b->instr = get_instr(m, instr->line, "jlcalc");
+//        label = GC_MALLOC(strlen(instr->arg1));
+//        strcpy(label, instr->arg1);
+//        b->label = label;
         break;
     case JLE:
         ensure_one_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "jlecalc");
-        label = GC_MALLOC(strlen(instr->arg1));
-        strcpy(label, instr->arg1);
-        b->label = label;
+        parse_jump("jler", "jlecalc", m, instr, b);
+//        b->instr = get_instr(m, instr->line, "jlecalc");
+//        label = GC_MALLOC(strlen(instr->arg1));
+//        strcpy(label, instr->arg1);
+//        b->label = label;
         break;
     case STRUCT:
         ensure_two_arg(m, instr);
@@ -216,11 +245,42 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         info("New on register %s(%p) of size %d.\n",
              instr->arg1, reg, st->struct_size);
         break;
-    case DATA:
     case PUSH:
+        ensure_one_arg(m, instr);
+        if(map_present(m->instrs_regs, instr->arg1)) {
+            b->instr = get_instr(m, instr->line, "pushr");
+            b->a1 = map_get(m->instrs_regs, instr->arg1);
+        }
+        else {
+            b->instr = get_instr(m, instr->line, "pushc");
+            b->constant = parse_arg(m, instr->arg1, instr->line);
+        }
+        break;
     case POP:
+        ensure_one_arg(m, instr);
+        if(!map_present(m->instrs_regs, instr->arg1)) {
+            fatal("Line %d: No such register %s\n",
+                  10, instr->line, instr->arg1);
+        }
+        b->instr = get_instr(m, instr->line, "popr");
+        b->a1 = map_get(m->instrs_regs, instr->arg1);
+        break;
+    case CALL:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "call");
+        char *label = GC_MALLOC(strlen(instr->arg1));
+        strcpy(label, instr->arg1);
+        b->label = label;
+        break;
+    case RET:
+        ensure_zero_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "ret");
+        break;
+    case DATA:
+    default:
         fatal("INSTRUCTION NOT IMPLEMENTED: [%s] %s : %lu\n",
               6, instr->instr, m->filename, instr->line);
+        break;
     }
 }
 
@@ -340,7 +400,6 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
         }
         else {
             bin->constant = parse_arg(m, instr->arg2, instr->line);
-            info("SECOND CONSTANT = %ld\n", bin->constant);
             strcat(instr_name, "c");
         }
     }

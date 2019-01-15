@@ -1,0 +1,51 @@
+module fibonacci
+
+export start
+
+start:
+## Every fib number up to 40 
+#    push R0
+#    call fib
+#    dumpreg R1
+#    pop R0
+#    inc R0
+#    cmp R0 $40
+#    jl start
+#    exit
+
+     mov R0 $40
+     call fib
+     dumpreg R1
+     exit
+
+## fib calculates the Nth fibonacci number recursively.
+## It accepts its parameter in R0 and returns the value in R1
+fib:
+    cmp R0 $2
+    jle return_one
+
+    push R0
+    add R0 $-1
+    call fib
+
+    ## Restore our original target number
+    pop R0
+    ## Save the result of fib(N - 1)
+    push R1
+
+    add R0 $-2
+    call fib
+    ## fib(N - 2) is now in R1
+
+    ## Restore fib(N - 1) into R2
+    pop R2
+
+    ## add the results
+    add R1 R2
+    ret
+
+
+return_one:
+    mov R1 $1
+    ret
+    
