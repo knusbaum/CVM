@@ -31,7 +31,6 @@ static void *get_instr(struct module *m, int line, char * instr);
 static void calculate_jumps(struct module *m);
 
 struct module *parse_module(char * filename, map_t *instrs_regs) {
-    info("LOADING MODULE %s with vm map @ %p\n", filename, instrs_regs);
     lexed_instr *instrs_p = lex_module(filename);
     lexed_instr *instrs = instrs_p;
     struct module *m = GC_MALLOC(sizeof (struct module));
@@ -49,7 +48,6 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     m->structures = map_create();
 
     while(instrs->instr != NULL) {
-        //printf("{[%d], [%s], [%s], [%s]}\n", instrs->type, instrs->instr, instrs->arg1, instrs->arg2);
         struct binstr b;
         translate_instruction(m, instrs, &b);
         if(b.instr) {
@@ -96,10 +94,10 @@ static void add_structure(struct module *m, lexed_instr *instr) {
 static void parse_jump(char *reginstr, uintptr_t calcinstr, struct module *m, lexed_instr *instr, struct binstr *b) {
     if(map_present(m->instrs_regs, instr->arg1)) {
         b->instr = get_instr(m, instr->line, reginstr);
-        b->a1 = map_get(m->instrs_regs, instr->arg1);
+        b->a1 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
     }
     else {
-        b->instr = calcinstr; //get_instr(m, instr->line, calcinstr);
+        b->instr = (void *)calcinstr;
         char *label = GC_MALLOC(strlen(instr->arg1));
         strcpy(label, instr->arg1);
         b->label = label;
@@ -229,7 +227,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         ensure_one_arg(m, instr);
         if(map_present(m->instrs_regs, instr->arg1)) {
             b->instr = get_instr(m, instr->line, "pushr");
-            b->a1 = map_get(m->instrs_regs, instr->arg1);
+            b->a1 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
         }
         else {
             b->instr = get_instr(m, instr->line, "pushc");
@@ -243,11 +241,11 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
                   10, instr->line, instr->arg1);
         }
         b->instr = get_instr(m, instr->line, "popr");
-        b->a1 = map_get(m->instrs_regs, instr->arg1);
+        b->a1 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
         break;
     case CALL:
         ensure_one_arg(m, instr);
-        b->instr = CALLCALC; //get_instr(m, instr->line, "rcall");
+        b->instr = (void *)CALLCALC;
         char *label = GC_MALLOC(strlen(instr->arg1));
         strcpy(label, instr->arg1);
         b->label = label;
@@ -428,42 +426,43 @@ static void *module_call_lookup(char *label) {
 static void calculate_jump(struct module *m, struct binstr *bs) {
 
     struct binstr *target;
-    if(bs->instr == JMPCALC) {
+    switch((uintptr_t)bs->instr) {
+    case JMPCALC:
         bs->instr = get_instr(m, 0, "jmp");
         target = map_get(m->labels, bs->label);
         bs->target = target;
-    }
-    else if(bs->instr == JECALC) {
+        break;
+    case JECALC:
         bs->instr = get_instr(m, 0, "je");
         target = map_get(m->labels, bs->label);
         bs->target = target;
-    }
-    else if(bs->instr == JNECALC) {
+        break;
+    case JNECALC:
         bs->instr = get_instr(m, 0, "jne");
         target = map_get(m->labels, bs->label);
         bs->target = target;
-    }
-    else if(bs->instr == JGCALC) {
+        break;
+    case JGCALC:
         bs->instr = get_instr(m, 0, "jg");
         target = map_get(m->labels, bs->label);
         bs->target = target;
-    }
-    else if(bs->instr == JGECALC) {
+        break;
+    case JGECALC:
         bs->instr = get_instr(m, 0, "jge");
         target = map_get(m->labels, bs->label);
         bs->target = target;
-    }
-    else if(bs->instr == JLCALC) {
+        break;
+    case JLCALC:
         bs->instr = get_instr(m, 0, "jl");
         target = map_get(m->labels, bs->label);
         bs->target = target;
-    }
-    else if(bs->instr == JLECALC) {
+        break;
+    case JLECALC:
         bs->instr = get_instr(m, 0, "jle");
         target = map_get(m->labels, bs->label);
         bs->target = target;
-    }
-    else if(bs->instr == CALLCALC) {
+        break;
+    case CALLCALC:
         target = map_get(m->labels, bs->label);
         if(target == NULL) {
             bs->target = module_call_lookup(bs->label);
@@ -473,6 +472,7 @@ static void calculate_jump(struct module *m, struct binstr *bs) {
             bs->instr = get_instr(m, 0, "call");
             bs->target = target;
         }
+        break;
     }
 }
 

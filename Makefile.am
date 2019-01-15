@@ -16,6 +16,9 @@ test3: cvm
 test4: cvm
 	src/cvm test4.cvm
 
+testlist: cvm
+	src/cvm testlist.cvm
+
 fib: cvm
 	src/cvm fib.cvm
 

@@ -71,4 +71,3 @@ loop:
     mov R0 R2
 
     ret
-    

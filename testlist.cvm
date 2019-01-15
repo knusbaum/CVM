@@ -23,5 +23,21 @@ start:
     pop R0
     call list.dump
 
+    call list.create
+    mov R1 $0
+
+loop:
+    call list.push
+    inc R1
+    cmp R1 0x1000000
+    jne loop
+
+    push R0
+    call list.length
+    dumpreg R0
+    pop R0
+
+    call list.dump
+
+
     exit
-    
