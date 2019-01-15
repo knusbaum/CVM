@@ -25,6 +25,8 @@ uintptr_t registers[13];
 uintptr_t flags;
 
 #define FLAG_EQUAL 0x1
+#define FLAG_LESS (0x1 << 1)
+#define FLAG_GREATER (0x1 << 2)
 
 map_t *get_registers() {
     map_t *m = map_create();
@@ -61,7 +63,7 @@ void dump_regs() {
     info("R12: 0x%.16lX\n", registers[12]);
 }
 
-//        info("%p\n", bs);                     
+//        info("%p\n", bs);
 #define NEXTI {                                 \
         bs++;                                   \
         goto *bs->instr;                        \
@@ -72,11 +74,11 @@ void run_module(char *filename) {
     map_put(m, "movrr", &&movrr);
     map_put(m, "movrc", &&movrc);
     map_put(m, "movro", &&movro);
-    
     map_put(m, "movor", &&movor);
     map_put(m, "movoc", &&movoc);
     map_put(m, "movoo", &&movoo);
-    
+
+    // Integer arithmetic
     map_put(m, "incr", &&incr);
     map_put(m, "cmprr", &&cmprr);
     map_put(m, "cmprc", &&cmprc);
@@ -84,53 +86,61 @@ void run_module(char *filename) {
     map_put(m, "addrc", &&addrc);
     map_put(m, "subrr", &&subrr);
     map_put(m, "subrc", &&subrc);
+
+    // Jumps
     map_put(m, "jmpcalc", &&jmpcalc);
     map_put(m, "jecalc", &&jecalc);
     map_put(m, "jnecalc", &&jnecalc);
+    map_put(m, "jgcalc", &&jgcalc);
+    map_put(m, "jgecalc", &&jgecalc);
+    map_put(m, "jlcalc", &&jlcalc);
+    map_put(m, "jlecalc", &&jlecalc);
+
     map_put(m, "new", &&new);
-    
+
+    map_put(m, "dumpreg", &&dumpreg);
     map_put(m, "exit", &&exit);
-    
+
     struct module *module = parse_module(filename, m);
     struct binstr *bs = module->binstrs;
 
     info("Successfully loaded module %s. Running...\n", module->modname);
-    
+
     goto *bs->instr;
     return;
 
     char *label;
     void *target;
     uintptr_t *ob, *ob2;
-    
+
 movrr:
-    info("Executing [MOVRR] on regs %d, %d\n", bs->a1, bs->a2);
+//    info("Executing [MOVRR] on regs %d, %d\n", bs->a1, bs->a2);
     registers[bs->a1] = registers[bs->a2];
     NEXTI;
 movrc:
-    info("Executing [MOVRC] on reg %d %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [MOVRC] on reg %d %lu\n", bs->a1, (uintptr_t)bs->a2);
     registers[bs->a1] = bs->constant;
     NEXTI;
 movro:
-    info("Executing [MOVRO] on reg %d object %p(%d)\n", bs->a1, bs->a2, bs->offset2);
+//    info("Executing [MOVRO] on reg %d object %p(%d)\n", bs->a1, bs->a2, bs->offset2);
     ob = (uintptr_t *)registers[bs->a2];
     ob += bs->offset2;
     registers[bs->a1] = *ob;
     NEXTI;
 movor:
-    info("Executing [MOVOR] on object %p(%d), reg %d\n", bs->a1, bs->offset, bs->a2);
+//    info("Executing [MOVOR] on object %p(%d), reg %d\n", bs->a1, bs->offset, bs->a2);
     ob = (uintptr_t *)registers[bs->a1];
     ob += bs->offset;
     *ob = registers[bs->a2];
     NEXTI;
 movoc:
-    info("Executing [MOVOC] on object %p(%d), %d\n", bs->a1, bs->offset, bs->constant);
+//    info("Executing [MOVOC] on object %p(%d), %d\n", bs->a1, bs->offset, bs->constant);
     ob = (uintptr_t *)registers[bs->a1];
     ob += bs->offset;
     *ob = bs->constant;
     NEXTI;
 movoo:
-    info("Executing [MOVOO] on object %p(%d), object %p(%d)\n", bs->a1, bs->offset, bs->a2, bs->offset2);
+//    info("Executing [MOVOO] on object %p(%d), object %p(%d)\n", bs->a1, bs->offset, bs->a2, bs->offset2);
     ob = (uintptr_t *)registers[bs->a1];
     ob += bs->offset;
     ob2 = (uintptr_t *)registers[bs->a2];
@@ -138,74 +148,175 @@ movoo:
     *ob = *ob2;
     NEXTI;
 incr:
-    info("Executing  [INCR] on reg %d\n", bs->a1);
+//    info("Executing  [INCR] on reg %d\n", bs->a1);
     registers[bs->a1]++;
     NEXTI;
 cmprr:
-    if(registers[bs->a1] == registers[bs->a2])
+//    info("Executing  [CMPRR] on reg %d(%ld), reg %d(%ld) (",
+//         bs->a1, registers[bs->a1],
+//         bs->a2, registers[bs->a2]);
+    flags &= ~(FLAG_EQUAL | FLAG_GREATER | FLAG_LESS);
+    if(registers[bs->a1] == registers[bs->a2]) {
         flags |= FLAG_EQUAL;
-    else
-        flags &= ~FLAG_EQUAL;
+//        print("EQUAL ");
+    }
+    else if(registers[bs->a1] > registers[bs->a2]) {
+        flags |= FLAG_GREATER;
+//        print("GREATER ");
+    }
+    else {
+        flags |= FLAG_LESS;
+//        print("LESS ");
+    }
+//    print(")\n");
     NEXTI;
 cmprc:
-    if(registers[bs->a1] == bs->constant)
+//    info("Executing  [CMPRC] on reg %d(%ld), constant: %ld (",
+//         bs->a1, registers[bs->a1],
+//         bs->constant);
+    flags &= ~(FLAG_EQUAL | FLAG_GREATER | FLAG_LESS);
+    if(registers[bs->a1] == bs->constant) {
         flags |= FLAG_EQUAL;
-    else
-        flags &= ~FLAG_EQUAL;
+//        print("EQUAL ");
+    }
+    else if(registers[bs->a1] > bs->constant) {
+        flags |= FLAG_GREATER;
+//        print("GREATER ");
+    }
+    else {
+        flags |= FLAG_LESS;
+//        print("LESS ");
+    }
+//    print(")\n");
     NEXTI;
 addrr:
-    info("Executing [ADDRR] on regs %d, %d\n", bs->a1, bs->a2);
+//    info("Executing [ADDRR] on regs %d, %d\n", bs->a1, bs->a2);
     registers[bs->a1] += registers[bs->a2];
     NEXTI;
 addrc:
-    info("Executing [ADDRC] on reg %d %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [ADDRC] on reg %d %lu\n", bs->a1, (uintptr_t)bs->a2);
     registers[bs->a1] += bs->constant;
     NEXTI;
 subrr:
-    info("Executing [SUBRR] on regs %d, %d\n", bs->a1, bs->a2);
+//    info("Executing [SUBRR] on regs %d, %d\n", bs->a1, bs->a2);
     registers[bs->a1] -= registers[bs->a2];
     NEXTI;
 subrc:
-    info("Executing [SUBRC] on reg %d %lu\n", bs->a1, (uintptr_t)bs->a2);
+//    info("Executing [SUBRC] on reg %d %lu\n", bs->a1, (uintptr_t)bs->a2);
     registers[bs->a1] -= bs->constant;
     NEXTI;
 
 jmpcalc:
-    info("Executing [JMP] to %s ", bs->label);
-dojump:
+    bs->instr = &&jmp;
+docalc:
     label = bs->label;
     target = map_get(module->labels, label);
     if(target == NULL) {
         fatal("Can't jump to label: [%s] because it doesn't exist.\n", 7, label);
     }
-    info("(Jumping to: %p)\n", target);
-    bs = target;
+    bs->target = target;
     goto *bs->instr;
 
 jecalc:
-    info("Executing [JE] to %s ", bs->label);
-    if(flags & FLAG_EQUAL) {
-        goto dojump;
-    }
-    info(" (Not jumping)\n");
-    NEXTI;
+    bs->instr = &&je;
+    goto docalc;
 
 jnecalc:
-    info("Executing [JNE] to %s ", bs->label);
-    if(!(flags & FLAG_EQUAL)) {
-        goto dojump;
+    bs->instr = &&jne;
+    goto docalc;
+
+jgcalc:
+    bs->instr = &&jg;
+    goto docalc;
+
+jgecalc:
+    bs->instr = &&jge;
+    goto docalc;
+
+jlcalc:
+    bs->instr = &&jl;
+    goto docalc;
+
+jlecalc:
+    bs->instr = &&jle;
+    goto docalc;
+    
+jmp:
+//    info("Executing [JMP] to %p\n", bs->target);
+    bs = bs->target;
+    goto *bs->instr;
+
+je:
+//    info("Executing [JE] to %p ", bs->target);
+    if(flags & FLAG_EQUAL) {
+//        info(" (Jumping)\n");
+        bs = bs->target;
+        goto *bs->instr;
     }
-    info(" (Not jumping)\n");
-    NEXTI;    
+//    info(" (Not jumping)\n");
+    NEXTI;
+
+jne:
+//    info("Executing [JNE] to %p ", bs->target);
+    if(!(flags & FLAG_EQUAL)) {
+//        info(" (Jumping)\n");
+        bs = bs->target;
+        goto *bs->instr;
+    }
+//    info(" (Not jumping)\n");
+    NEXTI;
+
+jg:
+//    info("Executing [JG] to %p ", bs->target);
+    if(flags & FLAG_GREATER) {
+//        info(" (Jumping)\n");
+        bs = bs->target;
+        goto *bs->instr;
+    }
+//    info(" (Not jumping)\n");
+    NEXTI;
+
+jge:
+//    info("Executing [JGE] to %p ", bs->target);
+    if(flags & (FLAG_GREATER | FLAG_EQUAL)) {
+//        info(" (Jumping)\n");
+        bs = bs->target;
+        goto *bs->instr;
+    }
+//    info(" (Not jumping)\n");    
+    NEXTI;
+
+jl:
+//    info("Executing [JL] to %p ", bs->target);
+    if(flags & FLAG_LESS) {
+//        info(" (Jumping)\n");
+        bs = bs->target;
+        goto *bs->instr;
+    }
+//    info(" (Not jumping)\n");    
+    NEXTI;
+
+jle:
+//    info("Executing [JLE] to %p ", bs->target);
+    if(flags & (FLAG_LESS | FLAG_EQUAL)) {
+//        info(" (Jumping)\n");
+        bs = bs->target;
+        goto *bs->instr;
+    }
+//    info(" (Not jumping)\n");    
+    NEXTI;
     
 new:
     registers[bs->a1] = (uintptr_t)GC_MALLOC(bs->constant * sizeof (void *));
-    info("Executing [NEW] object at %p in reg %d size %lu\n",
-         registers[bs->a1], bs->a1, bs->constant * sizeof (void *));
+//    info("Executing [NEW] object at %p in reg %d size %lu\n",
+//         registers[bs->a1], bs->a1, bs->constant * sizeof (void *));
     NEXTI;
-    
+
+dumpreg:
+    printf("R%d: 0x%.16lX\n", bs->a1, registers[bs->a1]);
+    NEXTI;
 exit:
-    info("CVM got EXIT @ %p\n", bs);
+//    info("CVM got EXIT @ %p\n", bs);
     destroy_module(module);
     map_destroy(m);
     return;

@@ -13,8 +13,13 @@ enum token_type {
     JMP,
     JE,
     JNE,
+    JG,
+    JGE,
+    JL,
+    JLE,
     LABEL,
     STRUCT,
+    DUMPREG,
     NEW
 };
 

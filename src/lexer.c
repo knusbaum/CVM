@@ -138,8 +138,23 @@ static void apply_type(lexed_instr *instr) {
     else if(strcmp(lexbuff, "jne") == 0) {
         instr->type = JNE;
     }
+    else if(strcmp(lexbuff, "jg") == 0) {
+        instr->type = JG;
+    }
+    else if(strcmp(lexbuff, "jge") == 0) {
+        instr->type = JGE;
+    }
+    else if(strcmp(lexbuff, "jl") == 0) {
+        instr->type = JL;
+    }
+    else if(strcmp(lexbuff, "jle") == 0) {
+        instr->type = JLE;
+    }
     else if(strcmp(lexbuff, "struct") == 0) {
         instr->type = STRUCT;
+    }
+    else if(strcmp(lexbuff, "dumpreg") == 0) {
+        instr->type = DUMPREG;
     }
     else if(strcmp(lexbuff, "new") == 0) {
         instr->type = NEW;

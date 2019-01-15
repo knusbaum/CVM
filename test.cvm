@@ -1,60 +1,132 @@
 module test
 
+struct list
+    next
+    val
+    ## These are here just to take up space.
+    a
+    b
+    c
+    d
+    e
+    f
+    g
+    h
+    i
+    j
+    k
+    l
+    m
+    n
+    o
+    p
+    q
+    r
+    s
+    t
+    u
+    v
+    w
+    x
+    y
+    z
+endstruct
+
 struct foo
     bar
     baz
     boo
-    #dododo
 endstruct
+
 
 export start
 
 start:
-        mov R0 $0
-        inc R0
+## Integer comparison
+    mov R1 $10
+    cmp R1 $10
 
-        mov R1 R0
-        inc R1
+    mov R11 $1
+    jl fail
+    mov R11 $2
+    jg fail
+    mov R11 $3
+    jne fail
 
-        mov R2 R1
-        inc R2
+    mov R1 $10
+    cmp R1 $11
 
-        mov R3 R2
-        add R3 $5
+    mov R11 $4
+    jge fail
+    mov R11 $5
+    je fail
 
-        mov R4 R0
-        add R4 R3
+    cmp R1 $9
 
-        mov R5 $0
-        sub R5 $1
+    mov R11 $6
+    jle fail
+    
+    
+    mov R12 0x600D
 
-        mov R6 R5
-        sub R6 R3
+## Test allocation and GC with a big linked list
+bigloop:
+    mov R0 $0
+    new R1 list
+    mov R1(list.val) $0
+    mov R1(list.next) $0
+loop:
+    
+    new R2 list
+    mov R2(list.val) R0
+    mov R2(list.next) R1
+    mov R1 R2
 
-        new R7 foo
+    inc R0 
+    cmp R0 $10000000
+    jne loop
 
-        mov R7(foo.bar) $10
-        mov R7(foo.boo) $11
-        mov R8 R7(foo.bar)
-        mov R9 R7(foo.boo)
+    
+loop2:
+    mov R2 R1(list.val)
+    #dumpreg R2
+    
+    mov R1 R1(list.next)
+    cmp R1 $0
+    jne loop2
 
-        mov R10 $-10
-        add R10 $20
+## Go around a few times, just to check the heap is reused (stuff is getting freed.
+    dumpreg R3
+    cmp R3 0x3
+    add R3 $1
+    jne bigloop
 
-        cmp R10 $10
-        jne fail
-        je success
 
-end:
-        exit
+## Count to 0xFEEDBACC
+    mov R1 $0
+feedbacc:
+    add R1 $127
+    cmp R1 0xFEEDBACC
+    jne feedbacc
 
-test:
-        mov R12 $10
-        jmp end
+    dumpreg R1
+
+## Basic moves on objects
+    new R7 foo
+
+    mov R7(foo.bar) $10
+    mov R7(foo.boo) $11
+    mov R8 R7(foo.bar)
+    mov R9 R7(foo.boo)
+
+    mov R10 $-10
+    add R10 $20  
+
+    exit
+
 
 fail:
-        mov R0 $1010
-        jmp test
-success:
-        mov R11 $1011
-        jmp test
+    mov R12 0xBAD
+    dumpreg R12
+    exit
+    

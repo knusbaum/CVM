@@ -7,6 +7,7 @@ struct binstr {
         uintptr_t constant;
         char *label;
         size_t offset2;
+        void *target;
     };
 };
 

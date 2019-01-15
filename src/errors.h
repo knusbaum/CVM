@@ -7,5 +7,6 @@ void err(const char * format, ...);
 void fatal(const char * format, int exitCode, ...);
 void warn(const char * format, ...);
 void info(const char * format, ...);
+void print(const char *format, ...);
 
 #endif

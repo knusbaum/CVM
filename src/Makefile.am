@@ -1,4 +1,4 @@
-AM_CFLAGS = -ggdb -O0 -std=gnu11 -Wall -Werror
+AM_CFLAGS = -ggdb -O0 -std=gnu11 -Wall #-Werror
 AM_LDFLAGS = -lgc
 
 bin_PROGRAMS = cvm

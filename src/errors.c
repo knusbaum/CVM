@@ -42,3 +42,10 @@ void info(const char * format, ...) {
     do_print("INFO: ", format, args);
     va_end(args);
 }
+
+void print(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    do_print("", format, args);
+    va_end(args);
+}

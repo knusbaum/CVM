@@ -16,7 +16,7 @@ static void ensure_one_arg(struct module *m, lexed_instr *instr);
 static void ensure_two_arg(struct module *m, lexed_instr *instr);
 
 static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *bin);
-static uintptr_t parse_arg(struct module *m, char *arg);
+static uintptr_t parse_arg(struct module *m, char *arg, unsigned long line);
 static void *get_instr(struct module *m, int line, char * instr);
 
 struct module *parse_module(char * filename, map_t *instrs_regs) {
@@ -155,6 +155,34 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         strcpy(label, instr->arg1);
         b->label = label;
         break;
+    case JG:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "jgcalc");
+        label = GC_MALLOC(strlen(instr->arg1));
+        strcpy(label, instr->arg1);
+        b->label = label;
+        break;
+    case JGE:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "jgecalc");
+        label = GC_MALLOC(strlen(instr->arg1));
+        strcpy(label, instr->arg1);
+        b->label = label;
+        break;
+    case JL:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "jlcalc");
+        label = GC_MALLOC(strlen(instr->arg1));
+        strcpy(label, instr->arg1);
+        b->label = label;
+        break;
+    case JLE:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "jlecalc");
+        label = GC_MALLOC(strlen(instr->arg1));
+        strcpy(label, instr->arg1);
+        b->label = label;
+        break;
     case STRUCT:
         ensure_two_arg(m, instr);
         info("Creating struct with name %s\n", instr->arg1);
@@ -162,6 +190,17 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
             fatal("Line %d: Redefinition of struct %s.\n", 4, instr->line, instr->arg1);
         }
         add_structure(m, instr);
+        break;
+    case DUMPREG:
+        ensure_one_arg(m, instr);
+        b->instr = get_instr(m, instr->line, "dumpreg");
+        if(map_present(m->instrs_regs, instr->arg1)) {
+            b->a1 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
+        }
+        else {
+            fatal("Line %d: No such register %s\n",
+                  7, instr->line, instr->arg1);
+        }
         break;
     case NEW:
         ensure_two_arg(m, instr);
@@ -241,7 +280,7 @@ static int parse_structmember(struct module *m, lexed_instr *instr, char *regnam
     }
 
     if(!map_present(m->instrs_regs, reg)) {
-        fatal("Line %d: No such register: %s",
+        fatal("Line %d: No such register: %s\n",
               instr->line, reg);
         return 0;
     }
@@ -249,14 +288,14 @@ static int parse_structmember(struct module *m, lexed_instr *instr, char *regnam
 
     struct parsed_struct *st = map_get(m->structures, struct_name);
     if(!st) {
-        fatal("Line %d: No such struct: %s",
+        fatal("Line %d: No such struct: %s\n",
               instr->line, struct_name);
         return 0;
     }
 
     if(!map_present(st->members, struct_member)) {
-        fatal("Line %d: No such member %s in struct: %s",
-              instr->line, struct_member, struct_name);
+        fatal("Line %d: No such member %s in struct: %s\n",
+              6, instr->line, struct_member, struct_name);
         return 0;
     }
     *offset = (size_t)map_get(st->members, struct_member);
@@ -300,7 +339,8 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
             strcat(instr_name, "o");
         }
         else {
-            bin->constant = parse_arg(m, instr->arg2);
+            bin->constant = parse_arg(m, instr->arg2, instr->line);
+            info("SECOND CONSTANT = %ld\n", bin->constant);
             strcat(instr_name, "c");
         }
     }
@@ -308,9 +348,16 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
     bin->instr = get_instr(m, instr->line, instr_name);
 }
 
-static uintptr_t parse_arg(struct module *m, char *arg) {
+static uintptr_t parse_arg(struct module *m, char *arg, unsigned long line) {
     uintptr_t x;
-    sscanf(arg, "$%ld", &x);
+    int scanned = sscanf(arg, "$%ld", &x);
+    if(scanned < 1) {
+        scanned = sscanf(arg, "0x%lx", &x);
+    }
+    if(scanned < 1) {
+        fatal("Line %d: Failed to scan constant from string \"%s\"\n",
+              8, line, arg);
+    }
     return x;
 }
 
