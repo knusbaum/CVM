@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdint.h>
 #include "gc.h"
 #include "lexer.h"
 #include "errors.h"
+#include "buffwriter.h"
 
 int look;
 
@@ -200,6 +202,36 @@ static void lex_struct(lexed_struct *s, FILE *f) {
     }
 }
 
+static void parse_data(lexed_instr *i, FILE *f) {
+    writable_buffer buf;
+    createbuffer(&buf);
+    
+    consume_space(f);
+    if(look == ',') {
+        get_char(f);
+    }
+    if(look == '\n') {
+        fatal("Line %d: Expected data declaration.\n", i->line);
+    }
+    if(look == '"') {
+        get_char(f);
+        while(look != '"') {
+            buffer_write_byte(&buf, look);
+            get_char(f);
+        }
+        get_char(f);
+    }
+    else {
+        fatal("Line %d: Can only accept string data currently.\n", i->line);
+    }
+    size_t length = buf.buff_ptr - buf.buff;
+    char *data = GC_MALLOC(length + 1);
+    memcpy(data, buf.buff, length);
+    data[length] = 0;
+    info("FOUND STRING %s\n", data);
+    i->arg1 = data;
+}
+
 static void next_instruction(lexed_instr *i, FILE *f) {
     i->instr = NULL;
     i->arg1 = NULL;
@@ -213,6 +245,14 @@ static void next_instruction(lexed_instr *i, FILE *f) {
     i->line = line_number;
     i->instr = lex_white_separated(f);
 
+    apply_type(i);
+    
+    // Interrupt the reading here if we have a DATA instruction.
+    if(i->type == DATA) {
+        parse_data(i, f);
+        return;
+    }
+    
     consume_space(f);
     i->arg1 = lex_white_separated(f);
 
@@ -222,7 +262,6 @@ static void next_instruction(lexed_instr *i, FILE *f) {
 
     match_char('\n', f);
 
-    apply_type(i);
     if(i->type == STRUCT) {
         info("Lexer creating struct.\n");
         lexed_struct *structure = GC_MALLOC(sizeof (lexed_struct));

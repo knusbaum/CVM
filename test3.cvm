@@ -1,5 +1,7 @@
 module test3
 
+data "foo bar baz"
+
 export start
 
 start:
