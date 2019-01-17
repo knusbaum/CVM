@@ -11,7 +11,7 @@ Suite * cvm_suite(void)
 
     TCase *tc_maps = map_testcases();
     TCase *tc_instructions = instruction_testcases();
-    
+
     suite_add_tcase(s, tc_maps);
     suite_add_tcase(s, tc_instructions);
     return s;
