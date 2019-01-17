@@ -169,7 +169,7 @@ START_TEST(test_incr)
                   "Expected register R0 == 1, but R0 == %ld", registers[R0]);
     ck_assert_msg(registers[R1] == 3,
                   "Expected register R1 == 3, but R1 == %ld", registers[R1]);
-    
+
 }
 END_TEST
 
@@ -272,6 +272,61 @@ START_TEST(test_cmprc_greater)
 }
 END_TEST
 
+START_TEST(test_addrr)
+{
+    run_testcode(
+        "start:\n"
+        "mov R0 $10\n"
+        "mov R1 $20\n"
+        "add R0 R1\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R0] == 30,
+                  "Expected register R0 == 30, but R0 == %ld", registers[R0]);
+}
+END_TEST
+
+START_TEST(test_addrc)
+{
+    run_testcode(
+        "start:\n"
+        "mov R0 $10\n"
+        "add R0 $20\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R0] == 30,
+                  "Expected register R0 == 30, but R0 == %ld", registers[R0]);
+}
+END_TEST
+
+START_TEST(test_subrr)
+{
+    run_testcode(
+        "start:\n"
+        "mov R0 $20\n"
+        "mov R1 $10\n"
+        "sub R0 R1\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R0] == 10,
+                  "Expected register R0 == 10, but R0 == %ld", registers[R0]);
+}
+END_TEST
+
+START_TEST(test_subrc)
+{
+    run_testcode(
+        "start:\n"
+        "mov R0 $20\n"
+        "sub R0 $10\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R0] == 10,
+                  "Expected register R0 == 10, but R0 == %ld", registers[R0]);
+}
+END_TEST
+
+
 TCase *instruction_testcases() {
     TCase *tc = tcase_create("Instructions");
 
@@ -280,7 +335,7 @@ TCase *instruction_testcases() {
     tcase_add_test(tc, test_struct_new_movro_movor_movoc);
     tcase_add_test(tc, test_array_new_movro_movor_movoc);
     tcase_add_test(tc, test_incr);
-    
+
     tcase_add_test(tc, test_cmprr_equal);
     tcase_add_test(tc, test_cmprr_less);
     tcase_add_test(tc, test_cmprr_greater);
@@ -288,5 +343,11 @@ TCase *instruction_testcases() {
     tcase_add_test(tc, test_cmprc_equal);
     tcase_add_test(tc, test_cmprc_less);
     tcase_add_test(tc, test_cmprc_greater);
+
+    tcase_add_test(tc, test_addrr);
+    tcase_add_test(tc, test_addrc);
+
+    tcase_add_test(tc, test_subrr);
+    tcase_add_test(tc, test_subrc);
     return tc;
 }
