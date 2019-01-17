@@ -63,6 +63,7 @@ static void run_testcode(char *code) {
 
 START_TEST(test_movrr)
 {
+    fprintf(stderr,"TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "mov R1 $10\n"
@@ -77,6 +78,7 @@ END_TEST
 
 START_TEST(test_movrc)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "mov R0 $10\n"
@@ -90,6 +92,7 @@ END_TEST
 
 START_TEST(test_struct_new_movro_movor_movoc)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         // Create struct foo (struct)
         "struct foo\n"
@@ -125,6 +128,7 @@ END_TEST
 
 START_TEST(test_array_new_movro_movor_movoc)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -157,6 +161,7 @@ END_TEST
 
 START_TEST(test_incr)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "inc R0\n"
@@ -175,6 +180,7 @@ END_TEST
 
 START_TEST(test_cmprr_equal)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "cmp R0 R1\n"
@@ -191,6 +197,7 @@ END_TEST
 
 START_TEST(test_cmprr_less)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "inc R1\n"
@@ -208,6 +215,7 @@ END_TEST
 
 START_TEST(test_cmprr_greater)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "inc R0\n"
@@ -225,6 +233,7 @@ END_TEST
 
 START_TEST(test_cmprc_equal)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "cmp R0 $0\n"
@@ -241,6 +250,7 @@ END_TEST
 
 START_TEST(test_cmprc_less)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "cmp R0 $1\n"
@@ -257,6 +267,7 @@ END_TEST
 
 START_TEST(test_cmprc_greater)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "inc R0\n"
@@ -274,6 +285,7 @@ END_TEST
 
 START_TEST(test_addrr)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "mov R0 $10\n"
@@ -288,6 +300,7 @@ END_TEST
 
 START_TEST(test_addrc)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "mov R0 $10\n"
@@ -301,6 +314,7 @@ END_TEST
 
 START_TEST(test_subrr)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "mov R0 $20\n"
@@ -315,6 +329,7 @@ END_TEST
 
 START_TEST(test_subrc)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "mov R0 $20\n"
@@ -328,6 +343,7 @@ END_TEST
 
 START_TEST(test_jmpr)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -346,6 +362,7 @@ END_TEST
 
 START_TEST(test_jmp)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
         "jmp foo\n"
@@ -362,6 +379,7 @@ END_TEST
 
 START_TEST(test_jer)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -378,6 +396,7 @@ END_TEST
 
 START_TEST(test_je)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -398,6 +417,7 @@ END_TEST
 
 START_TEST(test_jner)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -414,6 +434,7 @@ END_TEST
 
 START_TEST(test_jne)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -433,6 +454,7 @@ END_TEST
 
 START_TEST(test_jgr)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -450,6 +472,7 @@ END_TEST
 
 START_TEST(test_jg)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -474,6 +497,7 @@ END_TEST
 
 START_TEST(test_jger)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -491,6 +515,7 @@ END_TEST
 
 START_TEST(test_jge)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -515,6 +540,7 @@ END_TEST
 
 START_TEST(test_jlr)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -531,6 +557,7 @@ END_TEST
 
 START_TEST(test_jl)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -555,6 +582,7 @@ END_TEST
 
 START_TEST(test_jler)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
@@ -571,6 +599,7 @@ END_TEST
 
 START_TEST(test_jle)
 {
+    fprintf(stderr, "TEST %s\n", tcase_name());
     run_testcode(
         "start:\n"
 
