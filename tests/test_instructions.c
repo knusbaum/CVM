@@ -326,9 +326,275 @@ START_TEST(test_subrc)
 }
 END_TEST
 
+START_TEST(test_jmpr)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R0 IP\n"
+        "inc R1\n"
+        "cmp R1 $10\n"
+        "jge end\n"
+        "jmp R0\n"
+        "end:\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R1] == 10,
+                  "Expected register R1 == 10, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_jmp)
+{
+    run_testcode(
+        "start:\n"
+        "jmp foo\n"
+        "exit\n"
+
+        "foo:\n"
+        "mov R12 0x600D\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R12] == 0x600D,
+                  "Expected register R12 == 0x600, but R12 == %ld", registers[R12]);
+}
+END_TEST
+
+START_TEST(test_jer)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R0 IP\n"
+        "inc R1\n"
+        "cmp R1 $1\n"
+        "je R0\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R1] == 2,
+                  "Expected register R1 == 2, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_je)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R0 IP\n"
+        "inc R1\n"
+        "cmp R1 $1\n"
+        "je foo\n"
+        "exit\n"
+
+        "foo:\n"
+        "mov R11 0x600D\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R11] == 0x600D,
+                  "Expected register R11 == 0x600D, but R11 == %.16lX", registers[R11]);
+}
+END_TEST
+
+START_TEST(test_jner)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R0 IP\n"
+        "inc R1\n"
+        "cmp R1 $2\n"
+        "jne R0\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R1] == 2,
+                  "Expected register R1 == 2, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_jne)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R0 IP\n"
+        "cmp R1 $1\n"
+        "jne foo\n"
+        "exit\n"
+
+        "foo:\n"
+        "mov R11 0x600D\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R11] == 0x600D,
+                  "Expected register R11 == 0x600D, but R11 == %.16lX", registers[R11]);
+}
+END_TEST
+
+START_TEST(test_jgr)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R1 $10\n"
+        "mov R0 IP\n"
+        "sub R1 $1\n"
+        "cmp R1 $1\n"
+        "jg R0\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R1] == 1,
+                  "Expected register R1 == 1, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_jg)
+{
+    run_testcode(
+        "start:\n"
+
+        "loop:\n"
+        "inc R1\n"
+        "cmp R1 $10\n"
+        "jg foo\n"
+        "jmp loop\n"
+        "exit\n"
+
+        "foo:\n"
+        "mov R11 0x600D\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R11] == 0x600D,
+                  "Expected register R11 == 0x600D, but R11 == %.16lX", registers[R11]);
+    ck_assert_msg(registers[R1] == 11,
+                  "Expected register R1 == 11, but R1 == %ld", registers[R1]);
+
+}
+END_TEST
+
+START_TEST(test_jger)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R1 $10\n"
+        "mov R0 IP\n"
+        "sub R1 $1\n"
+        "cmp R1 $1\n"
+        "jge R0\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R1] == 0,
+                  "Expected register R1 == 0, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_jge)
+{
+    run_testcode(
+        "start:\n"
+
+        "loop:\n"
+        "mov R0 IP\n"
+        "inc R1\n"
+        "cmp R1 $10\n"
+        "jge foo\n"
+        "jmp loop\n"
+        "exit\n"
+
+        "foo:\n"
+        "mov R11 0x600D\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R11] == 0x600D,
+                  "Expected register R11 == 0x600D, but R11 == %.16lX", registers[R11]);
+    ck_assert_msg(registers[R1] == 10,
+                  "Expected register R1 == 10, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_jlr)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R0 IP\n"
+        "inc R1\n"
+        "cmp R1 $10\n"
+        "jl R0\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R1] == 10,
+                  "Expected register R1 == 10, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_jl)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R1 $10\n"
+        "loop:\n"
+        "sub R1 $1\n"
+        "cmp R1 $1\n"
+        "jl foo\n"
+        "jmp loop\n"
+        "exit\n"
+
+        "foo:\n"
+        "mov R11 0x600D\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R11] == 0x600D,
+                  "Expected register R11 == 0x600D, but R11 == %.16lX", registers[R11]);
+    ck_assert_msg(registers[R1] == 0,
+                  "Expected register R1 == 0, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_jler)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R0 IP\n"
+        "inc R1\n"
+        "cmp R1 $10\n"
+        "jle R0\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R1] == 11,
+                  "Expected register R1 == 11, but R1 == %ld", registers[R1]);
+}
+END_TEST
+
+START_TEST(test_jle)
+{
+    run_testcode(
+        "start:\n"
+
+        "mov R1 $10\n"
+        "loop:\n"
+        "sub R1 $1\n"
+        "cmp R1 $1\n"
+        "jle foo\n"
+        "jmp loop\n"
+        "exit\n"
+
+        "foo:\n"
+        "mov R11 0x600D\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R11] == 0x600D,
+                  "Expected register R11 == 0x600D, but R11 == %.16lX", registers[R11]);
+    ck_assert_msg(registers[R1] == 1,
+                  "Expected register R1 == 1, but R1 == %ld", registers[R1]);
+}
+END_TEST
 
 TCase *instruction_testcases() {
-    TCase *tc = tcase_create("Instructions");
+    TCase *tc = tcase_create("VM Instructions");
 
     tcase_add_test(tc, test_movrr);
     tcase_add_test(tc, test_movrc);
@@ -349,5 +615,26 @@ TCase *instruction_testcases() {
 
     tcase_add_test(tc, test_subrr);
     tcase_add_test(tc, test_subrc);
+
+    tcase_add_test(tc, test_jmpr);
+    tcase_add_test(tc, test_jmp);
+
+    tcase_add_test(tc, test_jer);
+    tcase_add_test(tc, test_je);
+
+    tcase_add_test(tc, test_jner);
+    tcase_add_test(tc, test_jne);
+
+    tcase_add_test(tc, test_jgr);
+    tcase_add_test(tc, test_jg);
+
+    tcase_add_test(tc, test_jger);
+    tcase_add_test(tc, test_jge);
+
+    tcase_add_test(tc, test_jlr);
+    tcase_add_test(tc, test_jl);
+
+    tcase_add_test(tc, test_jler);
+    tcase_add_test(tc, test_jle);
     return tc;
 }
