@@ -43,7 +43,7 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     m->binstr_count = 0;
     m->binstrs = GC_MALLOC(sizeof (struct binstr) * 4096);
     m->instrs_regs = instrs_regs;
-    m->data = NULL;
+    m->data = map_create();
     m->labels = map_create();
     m->structures = map_create();
 
@@ -214,14 +214,23 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         b->instr = get_instr(m, instr->line, "new");
         char reg = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
         struct parsed_struct *st = map_get(m->structures, instr->arg2);
-        if(!st) {
-            fatal("Line %d: No such struct: %s.\n",
-                  7, instr->line, instr->arg2);
+        if(st) {
+            //fatal("Line %d: No such struct: %s.\n",
+            //      7, instr->line, instr->arg2);
+            b->a1 = reg;
+            b->constant = (uintptr_t)st->struct_size;
+            info("New struct %s on register %s(0x%x) of size %d.\n",
+                 instr->arg2, instr->arg1, reg, st->struct_size);
         }
-        b->a1 = reg;
-        b->constant = (uintptr_t)st->struct_size;
-        info("New on register %s(%p) of size %d.\n",
-             instr->arg1, reg, st->struct_size);
+        else {
+            info("CREATING NEW ARRAY.\n");
+            uintptr_t size = parse_arg(m, instr->arg2, instr->line);
+            info("LENGTH IS %ld\n", size);
+            b->a1 = reg;
+            b->constant = size;
+            info("New array on register %s(0x%x) of size %ld bytes.\n",
+                 instr->arg1, reg, size);
+        }
         break;
     case PUSH:
         ensure_one_arg(m, instr);
@@ -259,6 +268,9 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         load_module(instr->arg1);
         break;
     case DATA:
+        info("Got data: %s = [%s]\n", instr->arg1, instr->arg2);
+        map_put(m->data, instr->arg1, instr->arg2);
+        break;
     default:
         fatal("INSTRUCTION NOT IMPLEMENTED: [%s] %s : %lu\n",
               6, instr->instr, m->filename, instr->line);
@@ -309,6 +321,26 @@ static void *get_instr(struct module *m, int line, char * instr) {
     return istr;
 }
 
+static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char *reg_p, size_t *offset) {
+    size_t length = strlen(regoff);
+    char reg[length];
+    long scanned_offset;
+    int scanned = sscanf(regoff, "%[^(]($%ld)", reg, &scanned_offset);
+    if(scanned != 2) {
+        info("Couldn't scan offset from [%s]\n", regoff);
+        return 0;
+    }
+
+    if(!map_present(m->instrs_regs, reg)) {
+        fatal("Line %d: No such register: %s\n",
+              instr->line, reg);
+        return 0;
+    }
+    *reg_p = (uintptr_t)map_get(m->instrs_regs, reg);
+    *offset = scanned_offset;
+    return 1;
+}
+
 static int parse_structmember(struct module *m, lexed_instr *instr, char *regname, char *reg_p, size_t *offset) {
     size_t length = strlen(regname);
     char reg[length];
@@ -357,7 +389,12 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
     else if(instr->arg1) {
         char reg_p;
         size_t offset;
-        if(parse_structmember(m, instr, instr->arg1, &reg_p, &offset)) {
+        if(parse_offset(m, instr, instr->arg1, &reg_p, &offset)) {
+            bin->a1 = reg_p;
+            bin->offset = offset;
+            strcat(instr_name, "o");
+        }
+        else if(parse_structmember(m, instr, instr->arg1, &reg_p, &offset)) {
             bin->a1 = reg_p;
             bin->offset = offset;
             strcat(instr_name, "o");
@@ -375,7 +412,12 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
     else if(instr->arg2) {
         char reg_p;
         size_t offset;
-        if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset)) {
+        if(parse_offset(m, instr, instr->arg2, &reg_p, &offset)) {
+            bin->a2 = reg_p;
+            bin->offset2 = offset;
+            strcat(instr_name, "o");
+        }
+        else if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset)) {
             bin->a2 = reg_p;
             bin->offset2 = offset;
             strcat(instr_name, "o");

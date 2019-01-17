@@ -58,7 +58,6 @@ pop:
 ## list in R0
 ## returns length in R0
 length:
-    mov R12 0x600E
     mov R1 R0(list.head)
 
     mov R2 $0

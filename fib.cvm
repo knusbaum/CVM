@@ -3,17 +3,17 @@ module fibonacci
 export start
 
 start:
-## Every fib number up to 40 
+## Every fib number up to 40
 #    push R0
 #    call fib
 #    dumpreg R1
 #    pop R0
 #    inc R0
-#    cmp R0 $40
+#    cmp R0 $43
 #    jl start
 #    exit
 
-     mov R0 $40
+     mov R0 $43
      call fib
      dumpreg R1
      exit
@@ -48,4 +48,3 @@ fib:
 return_one:
     mov R1 $1
     ret
-    

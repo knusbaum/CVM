@@ -229,7 +229,7 @@ static void parse_data(lexed_instr *i, FILE *f) {
     memcpy(data, buf.buff, length);
     data[length] = 0;
     info("FOUND STRING %s\n", data);
-    i->arg1 = data;
+    i->arg2 = data;
 }
 
 static void next_instruction(lexed_instr *i, FILE *f) {
@@ -244,18 +244,17 @@ static void next_instruction(lexed_instr *i, FILE *f) {
     }
     i->line = line_number;
     i->instr = lex_white_separated(f);
-
     apply_type(i);
     
+    consume_space(f);
+    i->arg1 = lex_white_separated(f);
+
     // Interrupt the reading here if we have a DATA instruction.
     if(i->type == DATA) {
         parse_data(i, f);
         return;
     }
     
-    consume_space(f);
-    i->arg1 = lex_white_separated(f);
-
     consume_space(f);
     i->arg2 = lex_white_separated(f);
     consume_space(f);
@@ -277,7 +276,12 @@ static void next_instruction(lexed_instr *i, FILE *f) {
 
 lexed_instr *lex_module(char *filename) {
     FILE *source = fopen(filename, "r");
-
+    if(source == NULL) {
+        printf("Failed to open file %s\n", filename);
+        perror("");
+        abort();
+    }
+    
     lexer_init(source);
 
     int instrs_scale = 1;

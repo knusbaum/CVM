@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <check.h>
 #include "map_test.h"
+#include "test_instructions.h"
 
 Suite * cvm_suite(void)
 {
@@ -9,8 +10,10 @@ Suite * cvm_suite(void)
     s = suite_create("CVM");
 
     TCase *tc_maps = map_testcases();
-
+    TCase *tc_instructions = instruction_testcases();
+    
     suite_add_tcase(s, tc_maps);
+    suite_add_tcase(s, tc_instructions);
     return s;
 }
 
@@ -22,7 +25,7 @@ int main(void) {
     s = cvm_suite();
     sr = srunner_create(s);
 
-    srunner_run_all(sr, CK_NORMAL);
+    srunner_run_all(sr, CK_VERBOSE);
     number_failed = srunner_ntests_failed(sr);
     srunner_free(sr);
     return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
