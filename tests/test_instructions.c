@@ -622,6 +622,99 @@ START_TEST(test_jle)
 }
 END_TEST
 
+START_TEST(test_new)
+{
+    fprintf(stderr, "TEST %s\n", tcase_name());
+    run_testcode(
+        "start:\n"
+        "mov R0 $0\n"
+        "new R0 $10\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R0] != 0,
+                  "Expected register R0 != 0, but R0 == %ld", registers[R0]);
+
+}
+END_TEST
+
+START_TEST(test_pushr)
+{
+    fprintf(stderr, "TEST %s\n", tcase_name());
+    run_testcode(
+        "start:\n"
+        "mov R0 $100\n"
+        "push R0\n"
+        "exit\n"
+        );
+    ck_assert_msg(stack[0] != 0,
+                  "Expected stack[0] == 100, but stack[0] == %ld", stack[0]);
+}
+END_TEST
+
+START_TEST(test_pushc)
+{
+    fprintf(stderr, "TEST %s\n", tcase_name());
+    run_testcode(
+        "start:\n"
+        "push $100\n"
+        "exit\n"
+        );
+    ck_assert_msg(stack[0] != 0,
+                  "Expected stack[0] == 100, but stack[0] == %ld", stack[0]);
+}
+END_TEST
+
+START_TEST(test_popr)
+{
+    fprintf(stderr, "TEST %s\n", tcase_name());
+    run_testcode(
+        "start:\n"
+        "push $100\n"
+        "pop R8\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R8] == 100,
+                  "Expected register R8 == 100, but register R8 == %ld", registers[R8]);
+}
+END_TEST
+
+START_TEST(test_call)
+{
+    fprintf(stderr, "TEST %s\n", tcase_name());
+    run_testcode(
+        "start:\n"
+        "call testfunc\n"
+        "exit\n"
+        "testfunc:\n"
+        "mov R10 $2020\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R10] == 2020,
+                  "Expected register R10 == 2020, but register R10 == %ld", registers[R10]);
+    ck_assert_msg(stack[0] != 0,
+                  "Expected stack[0] == 100, but stack[0] == %ld", stack[0]);
+}
+END_TEST
+
+START_TEST(test_ret)
+{
+    fprintf(stderr, "TEST %s\n", tcase_name());
+    run_testcode(
+        "start:\n"
+        "call testfunc\n"
+        "mov R0 $1010\n"
+        "exit\n"
+        "testfunc:\n"
+        "mov R10 $2020\n"
+        "ret\n"
+        );
+    ck_assert_msg(registers[R10] == 2020,
+                  "Expected register R10 == 2020, but register R10 == %ld", registers[R10]);
+    ck_assert_msg(registers[R0] == 1010,
+                  "Expected register R0 == 1010, but register R0 == %ld", registers[R0]);
+}
+END_TEST
+
 TCase *instruction_testcases() {
     TCase *tc = tcase_create("VM Instructions");
 
@@ -665,5 +758,15 @@ TCase *instruction_testcases() {
 
     tcase_add_test(tc, test_jler);
     tcase_add_test(tc, test_jle);
+
+    tcase_add_test(tc, test_new);
+
+    tcase_add_test(tc, test_pushr);
+    tcase_add_test(tc, test_pushc);
+    tcase_add_test(tc, test_popr);
+
+    tcase_add_test(tc, test_call);
+    tcase_add_test(tc, test_ret);
+
     return tc;
 }
