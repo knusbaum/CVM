@@ -19,7 +19,7 @@
 #define IP  13
 #define SP  14
 
-#define STACKSIZE 1024
+#define STACKSIZE 10240
 
 map_t *get_registers();
 void run_module(struct module *module);

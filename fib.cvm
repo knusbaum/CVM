@@ -13,7 +13,7 @@ start:
 #    jl start
 #    exit
 
-     mov R0 $43
+     mov R0 $30
      call fib
      dumpreg R1
      exit

@@ -3,6 +3,7 @@
 #include <check.h>
 #include "map_test.h"
 #include "test_instructions.h"
+#include "test_advanced.h"
 
 Suite * cvm_suite(void)
 {
@@ -11,9 +12,11 @@ Suite * cvm_suite(void)
 
     TCase *tc_maps = map_testcases();
     TCase *tc_instructions = instruction_testcases();
+    TCase *tc_advanced = advanced_testcases();
 
     suite_add_tcase(s, tc_maps);
     suite_add_tcase(s, tc_instructions);
+    suite_add_tcase(s, tc_advanced);
     return s;
 }
 

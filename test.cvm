@@ -71,8 +71,8 @@ start:
 
     mov R11 $6
     jle fail
-    
-    
+
+
     mov R12 0x600D
 
 ## Test allocation and GC with a big linked list
@@ -82,21 +82,21 @@ bigloop:
     mov R1(list.val) $0
     mov R1(list.next) $0
 loop:
-    
+
     new R2 list
     mov R2(list.val) R0
     mov R2(list.next) R1
     mov R1 R2
 
-    inc R0 
+    inc R0
     cmp R0 $10000000
     jne loop
 
-    
+
 loop2:
     mov R2 R1(list.val)
     #dumpreg R2
-    
+
     mov R1 R1(list.next)
     cmp R1 $0
     jne loop2
@@ -126,8 +126,6 @@ feedbacc:
     mov R9 R7(foo.boo)
 
     mov R10 $-10
-    add R10 $20  
+    add R10 $20
 
     exit
-
-    

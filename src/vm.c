@@ -317,17 +317,17 @@ new:
 pushr:
     *((uintptr_t *)registers[SP]) = registers[bs->a1];
     registers[SP]+=(sizeof (uintptr_t));
-//    if(registers[SP] > (uintptr_t)(stack + STACKSIZE)) {
-//        fatal("Blew the stack.\n", 20);
-//    }
+    if(registers[SP] > (uintptr_t)(stack + STACKSIZE)) {
+        fatal("Blew the stack.\n", 20);
+    }
     NEXTI;
 
 pushc:
     *((uintptr_t *)registers[SP]) = bs->constant;
     registers[SP]+=(sizeof (uintptr_t));
-//    if(registers[SP] > (uintptr_t)(stack + STACKSIZE)) {
-//        fatal("Blew the stack.\n", 20);
-//    }
+    if(registers[SP] > (uintptr_t)(stack + STACKSIZE)) {
+        fatal("Blew the stack.\n", 20);
+    }
     NEXTI;
 
 popr:
