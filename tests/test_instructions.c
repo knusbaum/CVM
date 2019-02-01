@@ -595,7 +595,7 @@ END_TEST
 
 START_TEST(test_newr)
 {
-    fprintf(stderr, "TEST %s\n", tcase_name());
+    PRINT_TEST_NAME
     run_testcode(
         "start:\n"
         "mov R1 $100\n"
