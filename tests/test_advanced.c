@@ -7,6 +7,7 @@
 #include "../src/map.h"
 #include "../src/parser.h"
 #include "../src/vm.h"
+#include "../config.h"
 #include "harness.h"
 
 extern uintptr_t stack[STACKSIZE];
@@ -15,7 +16,7 @@ extern uintptr_t flags;
 
 START_TEST(test_fibonacci)
 {
-    fprintf(stderr, "TEST %s\n", tcase_name());
+    PRINT_TEST_NAME
     run_testcode(
         "start:\n"
         "mov R0 $30\n"

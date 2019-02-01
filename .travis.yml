@@ -1,0 +1,51 @@
+language: c
+compiler: gcc
+
+script:
+  - ./setup.sh
+  - make check || tests/check_cvm
+
+matrix:
+  include:
+    # works on Precise and Trusty
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - libgc-dev
+            - check
+            - automake
+            - autoconf
+      env:
+        - MATRIX_EVAL="CC=gcc-6"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - libgc-dev
+            - check
+            - automake
+            - autoconf
+      env:
+        - MATRIX_EVAL="CC=gcc-7"
+
+        # This runs tests, but tests fail on OS X.
+        # Need to get on a mac and investigate
+#    - os: osx
+#      addons:
+#        homebrew:
+#          packages:
+#            - check
+#            - automake
+#            - autoconf
+#            - bdw-gc
+
+before_install:
+  - eval "${MATRIX_EVAL}"
