@@ -89,15 +89,15 @@ START_TEST(test_array_new_movro_movor_movoc)
         "new R0 $100\n"
 
         // Populate the second word of the array with 0xFEFEFEFEFEFEFEFE (movoc)
-        "mov R0($2) 0xFEFEFEFEFEFEFEFE\n"
+        "mov R0($4)[$2] 0xFEFEFEFEFEFEFEFE\n"
 
         // Move the second word of the array into R1 (movro)
-        "mov R1 R0($2)\n"
+        "mov R1 R0($4)[$2]\n"
 
         // Populate the fourth word of the array with 0xADADADADADADADAD (movor)
         "mov R4 0xADADADADADADADAD\n"
-        "mov R0($4) R4\n"
-        "mov R3 R0($4)\n"
+        "mov R0($4)[$4] R4\n"
+        "mov R3 R0($4)[$4]\n"
 
         "exit\n"
         );
@@ -575,18 +575,39 @@ START_TEST(test_jle)
 }
 END_TEST
 
-START_TEST(test_new)
+START_TEST(test_newc)
 {
     PRINT_TEST_NAME
     run_testcode(
         "start:\n"
         "mov R0 $0\n"
         "new R0 $10\n"
+        "mov R0($1)[$0] $100\n"
+        "mov R1 R0($1)[$0]\n"
         "exit\n"
         );
     ck_assert_msg(registers[R0] != 0,
                   "Expected register R0 != 0, but R0 == %ld", registers[R0]);
+    ck_assert_msg(registers[R1] == 100,
+                  "Expected register R1 == 100, but R1 == %ld", registers[R1]);
+}
+END_TEST
 
+START_TEST(test_newr)
+{
+    fprintf(stderr, "TEST %s\n", tcase_name());
+    run_testcode(
+        "start:\n"
+        "mov R1 $100\n"
+        "new R0 R1\n"
+        "mov R0($1)[$0] $1010\n"
+        "mov R1 R0($1)[$0]\n"
+        "exit\n"
+        );
+    ck_assert_msg(registers[R0] != 0,
+                  "Expected register R0 != 0, but R0 == %ld", registers[R0]);
+    ck_assert_msg(registers[R1] == 1010,
+                  "Expected register R1 == 1010, but R1 == %ld", registers[R1]);
 }
 END_TEST
 
@@ -712,7 +733,8 @@ TCase *instruction_testcases() {
     tcase_add_test(tc, test_jler);
     tcase_add_test(tc, test_jle);
 
-    tcase_add_test(tc, test_new);
+    tcase_add_test(tc, test_newc);
+    tcase_add_test(tc, test_newr);
 
     tcase_add_test(tc, test_pushr);
     tcase_add_test(tc, test_pushc);

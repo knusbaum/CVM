@@ -225,21 +225,30 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         break;
     case NEW:
         ensure_two_arg(m, instr);
-        b->instr = get_instr(m, instr->line, "new");
         char reg = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
         struct parsed_struct *st = map_get(m->structures, instr->arg2);
         if(st) {
-            //fatal("Line %d: No such struct: %s.\n",
-            //      7, instr->line, instr->arg2);
+            // Second argument is a struct name.
+            b->instr = get_instr(m, instr->line, "newc");
             b->a1 = reg;
             b->constant = (uintptr_t)st->struct_size;
             info("New struct %s on register %s(0x%x) of size %d.\n",
                  instr->arg2, instr->arg1, reg, st->struct_size);
         }
-        else {
+        else if(map_present(m->instrs_regs, instr->arg2)) {
+            // Second argument is a register.
+            b->instr = get_instr(m, instr->line, "newr");
+            b->a1 = reg;
+            b->a2 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
+            info("New array on register %s(0x%x) of size from register %s\n",
+                 instr->arg1, reg, instr->arg2);
+        }
+        else{
+            // Second argument is constant.
             info("CREATING NEW ARRAY.\n");
             uintptr_t size = parse_arg(m, instr->arg2, instr->line);
             info("LENGTH IS %ld\n", size);
+            b->instr = get_instr(m, instr->line, "newc");
             b->a1 = reg;
             b->constant = size;
             info("New array on register %s(0x%x) of size %ld bytes.\n",
@@ -339,8 +348,9 @@ static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char
     size_t length = strlen(regoff);
     char reg[length];
     long scanned_offset;
-    int scanned = sscanf(regoff, "%[^(]($%ld)", reg, &scanned_offset);
-    if(scanned != 2) {
+    long scanned_size;
+    int scanned = sscanf(regoff, "%[^(]($%ld)[$%ld]", reg, &scanned_size, &scanned_offset);
+    if(scanned != 3) {
         info("Couldn't scan offset from [%s]\n", regoff);
         return 0;
     }
@@ -350,8 +360,12 @@ static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char
               instr->line, reg);
         return 0;
     }
+    if(scanned_size < 1 || scanned_size > sizeof (uintptr_t)) {
+        fatal("Line %d: Size must be between 1 and %ld.\n",
+              instr->line, sizeof (uintptr_t));
+    }
     *reg_p = (uintptr_t)map_get(m->instrs_regs, reg);
-    *offset = scanned_offset;
+    *offset = scanned_offset * scanned_size;
     return 1;
 }
 

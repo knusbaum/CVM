@@ -105,7 +105,8 @@ static void __vm(struct module *module, map_t **vm_map) {
         map_put(regmap, "jlr", &&jlr);
         map_put(regmap, "jler", &&jler);
 
-        map_put(regmap, "new", &&new);
+        map_put(regmap, "newc", &&newc);
+        map_put(regmap, "newr", &&newr);
         map_put(regmap, "pushr", &&pushr);
         map_put(regmap, "pushc", &&pushc);
         map_put(regmap, "popr", &&popr);
@@ -308,8 +309,14 @@ jle:
 //    info(" (Not jumping)\n");
     NEXTI;
 
-new:
+newc:
     registers[bs->a1] = (uintptr_t)GC_MALLOC(bs->constant * sizeof (void *));
+//    info("Executing [NEW] object at %p in reg %d size %lu\n",
+//         registers[bs->a1], bs->a1, bs->constant * sizeof (void *));
+    NEXTI;
+
+newr:
+    registers[bs->a1] = (uintptr_t)GC_MALLOC(registers[bs->a2] * sizeof (void *));
 //    info("Executing [NEW] object at %p in reg %d size %lu\n",
 //         registers[bs->a1], bs->a1, bs->constant * sizeof (void *));
     NEXTI;
