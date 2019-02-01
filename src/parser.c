@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <libgen.h>
 #include "gc.h"
 #include "errors.h"
 #include "lexer.h"
@@ -102,6 +103,19 @@ static void parse_jump(char *reginstr, uintptr_t calcinstr, struct module *m, le
         strcpy(label, instr->arg1);
         b->label = label;
     }
+}
+
+static void load_relative(struct module *m, char *modname) {
+    // Put together the filename of the desired module relative to the
+    // location of the module we're loading.
+    size_t filename_len = strlen(m->filename) + strlen(modname) + 1;
+    char filename[filename_len];
+    strcpy(filename, m->filename);
+    dirname(filename);
+    strcat(filename, "/");
+    strcat(filename, modname);
+    info("IMPORTING: %s\n", filename);
+    load_module(filename);
 }
 
 static void translate_instruction(struct module *m, lexed_instr *instr, struct binstr *b) {
@@ -265,7 +279,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         break;
     case IMPORT:
         ensure_one_arg(m, instr);
-        load_module(instr->arg1);
+        load_relative(m, instr->arg1);
         break;
     case DATA:
         info("Got data: %s = [%s]\n", instr->arg1, instr->arg2);
