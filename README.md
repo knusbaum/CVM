@@ -1,5 +1,5 @@
 # CVM
-![build passing](https://travis-ci.org/knusbaum/CVM.svg?branch=master)
+[![Build Status](https://travis-ci.com/knusbaum/CVM.svg?branch=master)](https://travis-ci.com/knusbaum/CVM)
 
 CVM is a simple virtual machine that reads and executes an assembly-like lanugage
 
