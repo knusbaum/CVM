@@ -344,7 +344,7 @@ static void *get_instr(struct module *m, int line, char * instr) {
     return istr;
 }
 
-static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char *reg_p, size_t *offset) {
+static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char *reg_p, size_t *offset, size_t *size) {
     size_t length = strlen(regoff);
     char reg[length];
     long scanned_offset;
@@ -365,7 +365,9 @@ static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char
               instr->line, sizeof (uintptr_t));
     }
     *reg_p = (uintptr_t)map_get(m->instrs_regs, reg);
-    *offset = scanned_offset * scanned_size;
+    //*offset = scanned_offset * scanned_size;
+    *offset = scanned_offset;
+    *size = scanned_size;
     return 1;
 }
 
@@ -408,6 +410,7 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
     char a1 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
     char a2 = (uintptr_t)map_get(m->instrs_regs, instr->arg2);
 
+    int first_is_offset = 0;
     char instr_name[10];
     strcpy(instr_name, instr->instr);
     if(map_present(m->instrs_regs, instr->arg1)) {
@@ -417,15 +420,20 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
     else if(instr->arg1) {
         char reg_p;
         size_t offset;
-        if(parse_offset(m, instr, instr->arg1, &reg_p, &offset)) {
+        size_t size;
+        if(parse_offset(m, instr, instr->arg1, &reg_p, &offset, &size)) {
             bin->a1 = reg_p;
             bin->offset = offset;
+            bin->msize = size;
             strcat(instr_name, "o");
+            first_is_offset = 1;
         }
         else if(parse_structmember(m, instr, instr->arg1, &reg_p, &offset)) {
             bin->a1 = reg_p;
             bin->offset = offset;
+            bin->msize = sizeof (uintptr_t);
             strcat(instr_name, "o");
+            first_is_offset = 1;
         }
         else {
             fatal("Target must be a register. Moving to memory not implemented. %s : %d\n", 6,
@@ -440,14 +448,22 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
     else if(instr->arg2) {
         char reg_p;
         size_t offset;
-        if(parse_offset(m, instr, instr->arg2, &reg_p, &offset)) {
+        size_t size;
+        if(parse_offset(m, instr, instr->arg2, &reg_p, &offset, &size)) {
+            if(first_is_offset && size != bin->msize) {
+                fatal("Memory -> memory copy size mismatch: %d != %d. %s : %d\n", 7, bin->msize, size, m->filename, instr->line);
+            }
             bin->a2 = reg_p;
             bin->offset2 = offset;
             strcat(instr_name, "o");
         }
         else if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset)) {
+            if(first_is_offset && sizeof (uintptr_t) != bin->msize) {
+                fatal("Memory -> memory copy size mismatch: %d != %d. %s : %d\n", 7, bin->msize, sizeof (uintptr_t), m->filename, instr->line);
+            }
             bin->a2 = reg_p;
             bin->offset2 = offset;
+            //bin->msize = sizeof (uintptr_t);
             strcat(instr_name, "o");
         }
         else {

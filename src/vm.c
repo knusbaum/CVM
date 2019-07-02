@@ -49,11 +49,15 @@ void dump_regs() {
     info("R10: 0x%.16lX\n", registers[10]);
     info("R11: 0x%.16lX\n", registers[11]);
     info("R12: 0x%.16lX\n", registers[12]);
+    info("IP: 0x%.16lX\n", registers[13]);
+    info("SP: 0x%.16lX\n", registers[14]);
 }
+
+#include <unistd.h>
 
 //        info("%p\n", bs);
 #define NEXTI {                                 \
-        lbs += (sizeof (struct binstr));        \
+        lbs += (sizeof (struct binstr));                \
         goto *(bs->instr);                      \
     }
 
@@ -64,7 +68,11 @@ map_t *regmap;
 
 static void __vm(struct module *module, map_t **vm_map) {
     void *target;
-    uintptr_t *ob, *ob2;
+//    unsigned char *ob, *ob2;
+    uint8_t *ob8, *ob8_2;
+    uint16_t *ob16, *ob16_2;
+    uint32_t *ob32, *ob32_2;
+    uint64_t *ob64, *ob64_2;
 
     if(vm_map != NULL) {
         if(regmap != NULL) {
@@ -146,30 +154,138 @@ movrc:
     registers[bs->a1] = bs->constant;
     NEXTI;
 movro:
-//    info("Executing [MOVRO] on reg %d object %p(%d)\n", bs->a1, bs->a2, bs->offset2);
-    ob = (uintptr_t *)registers[bs->a2];
-    ob += bs->offset2;
-    registers[bs->a1] = *ob;
+    switch(bs->msize) {
+    case 1:
+        ob8 = (uint8_t *)registers[bs->a2];
+//        info("Executing [MOVRO] on reg %d, object %p(%d)[%d]\n", bs->a1, ob8, bs->msize, bs->offset2);
+        ob8 += bs->offset2;
+        registers[bs->a1] = *ob8;
+        break;
+    case 2:
+        ob16 = (uint16_t *)registers[bs->a2];
+//        info("Executing [MOVRO] on reg %d, object %p(%d)[%d]\n", bs->a1, ob16, bs->msize, bs->offset2);
+        ob16 += bs->offset2;
+        registers[bs->a1] = *ob16;
+        break;
+    case 4:
+        ob32 = (uint32_t *)registers[bs->a2];
+//        info("Executing [MOVRO] on reg %d, object %p(%d)[%d]\n", bs->a1, ob32, bs->msize, bs->offset2);
+        ob32 += bs->offset2;
+        registers[bs->a1] = *ob32;
+        break;
+    case 8:
+        ob64 = (uint64_t *)registers[bs->a2];
+//        info("Executing [MOVRO] on reg %d, object %p(%d)[%d]\n", bs->a1, ob64, bs->msize, bs->offset2);
+        ob64 += bs->offset2;
+        registers[bs->a1] = *ob64;
+        break;
+    default:
+        fatal("Cannot move %ld bytes.", bs->msize, 21);
+        break;
+    }
     NEXTI;
 movor:
-//    info("Executing [MOVOR] on object %p(%d), reg %d\n", bs->a1, bs->offset, bs->a2);
-    ob = (uintptr_t *)registers[bs->a1];
-    ob += bs->offset;
-    *ob = registers[bs->a2];
+    switch(bs->msize) {
+    case 1:
+        ob8 = (uint8_t *)registers[bs->a1];
+//        info("Executing [MOVOR] on object %p(%d)[%d], reg %d\n", ob8, bs->msize, bs->offset, bs->a2);
+        ob8 += bs->offset;
+        *ob8 = registers[bs->a2];
+        break;
+    case 2:
+        ob16 = (uint16_t *)registers[bs->a1];
+//        info("Executing [MOVOR] on object %p(%d)[%d], reg %d\n", ob16, bs->msize, bs->offset, bs->a2);
+        ob16 += bs->offset;
+        *ob16 = registers[bs->a2];
+        break;
+    case 4:
+        ob32 = (uint32_t *)registers[bs->a1];
+//        info("Executing [MOVOR] on object %p(%d)[%d], reg %d\n", ob32, bs->msize, bs->offset, bs->a2);
+        ob32 += bs->offset;
+        *ob32 = registers[bs->a2];
+        break;
+    case 8:
+        ob64 = (uint64_t *)registers[bs->a1];
+//        info("Executing [MOVOR] on object %p(%d)[%d], reg %d\n", ob64, bs->msize, bs->offset, bs->a2);
+        ob64 += bs->offset;
+        *ob64 = registers[bs->a2];
+        break;
+    default:
+        fatal("Cannot move %ld bytes.", bs->msize, 21);
+        break;
+    }
+
     NEXTI;
 movoc:
-//    info("Executing [MOVOC] on object %p(%d), %d\n", bs->a1, bs->offset, bs->constant);
-    ob = (uintptr_t *)registers[bs->a1];
-    ob += bs->offset;
-    *ob = bs->constant;
+    switch(bs->msize) {
+    case 1:
+        ob8 = (uint8_t *)registers[bs->a1];
+        info("Executing [MOVOC] on object %p(%d)[%d], %.2lX\n", ob8, bs->msize, bs->offset, bs->constant);
+        ob8 += bs->offset;
+        info("FINAL POINTER: %p\n", ob8);
+        *ob8 = bs->constant;
+        break;
+    case 2:
+        ob16 = (uint16_t *)registers[bs->a1];
+        info("Executing [MOVOC] on object %p(%d)[%d], %.4lX\n", ob16, bs->msize, bs->offset, bs->constant);
+        ob16 += bs->offset;
+        info("FINAL POINTER: %p\n", ob16);
+        *ob16 = bs->constant;
+        break;
+    case 4:
+        ob32 = (uint32_t *)registers[bs->a1];
+        info("Executing [MOVOC] on object %p(%d)[%d], %.8lX\n", ob32, bs->msize, bs->offset, bs->constant);
+        ob32 += bs->offset;
+        info("FINAL POINTER: %p\n", ob32);
+        *ob32 = bs->constant;
+        break;
+    case 8:
+        ob64 = (uint64_t *)registers[bs->a1];
+        info("Executing [MOVOC] on object %p(%d)[%d], %.16lX\n", ob64, bs->msize, bs->offset, bs->constant);
+        ob64 += bs->offset;
+        info("FINAL POINTER: %p\n", ob64);
+        *ob64 = bs->constant;
+        break;
+    default:
+        fatal("Cannot move %ld bytes.", bs->msize, 21);
+        break;
+    }
     NEXTI;
 movoo:
-//    info("Executing [MOVOO] on object %p(%d), object %p(%d)\n", bs->a1, bs->offset, bs->a2, bs->offset2);
-    ob = (uintptr_t *)registers[bs->a1];
-    ob += bs->offset;
-    ob2 = (uintptr_t *)registers[bs->a2];
-    ob2 += bs->offset2;
-    *ob = *ob2;
+    switch(bs->msize) {
+    case 1:
+        ob8 = (uint8_t *)registers[bs->a1];
+        ob8 += bs->offset;
+        ob8_2 = (uint8_t *)registers[bs->a2];
+        ob8_2 += bs->offset2;
+        *ob8 = *ob8_2;
+        break;
+    case 2:
+        ob16 = (uint16_t *)registers[bs->a1];
+        ob16 += bs->offset;
+        ob16_2 = (uint16_t *)registers[bs->a2];
+        ob16_2 += bs->offset2;
+        *ob16 = *ob16_2;
+        break;
+    case 4:
+        ob32 = (uint32_t *)registers[bs->a1];
+        ob32 += bs->offset;
+        ob32_2 = (uint32_t *)registers[bs->a2];
+        ob32_2 += bs->offset2;
+        *ob32 = *ob32_2;
+        break;
+    case 8:
+        ob64 = (uint64_t *)registers[bs->a1];
+        ob64 += bs->offset;
+        ob64_2 = (uint64_t *)registers[bs->a2];
+        ob64_2 += bs->offset2;
+        *ob64 = *ob64_2;
+        break;
+    default:
+        fatal("Cannot move %ld bytes.", bs->msize, 21);
+        break;
+    }
+
     NEXTI;
 incr:
 //    info("Executing  [INCR] on reg %d\n", bs->a1);

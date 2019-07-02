@@ -3,6 +3,7 @@ struct binstr {
     unsigned char a1;
     unsigned char a2;
     size_t offset;
+    size_t msize;
     union {
         uintptr_t constant;
         char *label;

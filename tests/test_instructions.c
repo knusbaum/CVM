@@ -57,7 +57,7 @@ START_TEST(test_struct_new_movro_movor_movoc)
         "new R0 foo\n"
 
         // Populate foo.bar with 10 (movor)
-        "mov R1 $10\n"
+        "mov R1 0xFEEDBAAC\n"
         "mov R0(foo.bar) R1\n"
 
         // move foo.bar into R2 (movro)
@@ -71,10 +71,30 @@ START_TEST(test_struct_new_movro_movor_movoc)
 
     ck_assert_msg(registers[R0] != 0,
                   "Expected register R0 != 0, but R0 == %d", registers[R0]);
-    ck_assert_msg(registers[R2] == 10,
-                  "Expected register R2 == 10, but R2 == %d", registers[R2]);
+    ck_assert_msg(registers[R2] == 0xFEEDBAAC,
+                  "Expected register R2 == 0xFEEDBAAC, but R2 == %.16lX", registers[R2]);
     ck_assert_msg(registers[R3] == 12,
                   "Expected register R3 == 12, but R3 == %d", registers[R3]);
+
+}
+END_TEST
+
+START_TEST(test_array_indexing)
+{
+    PRINT_TEST_NAME
+    run_testcode(
+        "start:\n"
+
+        "new R0 $100\n"
+        "mov R0($8)[$0] 0xDEADBEEFCAFEBABE\n"
+
+        "mov R1 R0($1)[$2]\n"
+
+        "exit\n"
+        );
+
+    ck_assert_msg(registers[R1] == 0xFE,
+                  "Expected register R1 == 0xFE, but R1 == %.16lX", registers[R1]);
 
 }
 END_TEST
@@ -88,16 +108,24 @@ START_TEST(test_array_new_movro_movor_movoc)
         // Create array of 100 bytes (new)
         "new R0 $100\n"
 
-        // Populate the second word of the array with 0xFEFEFEFEFEFEFEFE (movoc)
-        "mov R0($4)[$2] 0xFEFEFEFEFEFEFEFE\n"
+        // Populate the third word of the array with 0xFEFEFEFEFEFEFEFE (movoc)
+        "mov R0($8)[$2] 0xFEFEFEFEFEFEFEFE\n"
 
-        // Move the second word of the array into R1 (movro)
-        "mov R1 R0($4)[$2]\n"
+        // Move the third word of the array into R1 (movro)
+        "mov R1 R0($8)[$2]\n"
 
-        // Populate the fourth word of the array with 0xADADADADADADADAD (movor)
+        // Populate the fifth word of the array with 0xADADADADADADADAD (movor)
         "mov R4 0xADADADADADADADAD\n"
-        "mov R0($4)[$4] R4\n"
-        "mov R3 R0($4)[$4]\n"
+        "mov R0($8)[$4] R4\n"
+        "mov R3 R0($8)[$4]\n"
+
+
+        // Populate the first word of the array with 0xDEADBEEFCAFEBABE (movor)
+        "mov R4 0xDEADBEEFCAFEBABE\n"
+        "mov R0($8)[$0] R4\n"
+        // Put the third byte into R5 (movro)
+        "mov R5 R0($1)[$2]\n"
+        "mov R6 R0($8)[$0]\n"
 
         "exit\n"
         );
@@ -108,6 +136,10 @@ START_TEST(test_array_new_movro_movor_movoc)
                   "Expected register R1 == 0xFEFEFEFEFEFEFEFE, but R1 == %.16lX", registers[R1]);
     ck_assert_msg(registers[R3] == 0xADADADADADADADAD,
                   "Expected register R3 == 0xADADADADADADADAD, but R3 == %.16lX", registers[R3]);
+    ck_assert_msg(registers[R6] == 0xDEADBEEFCAFEBABE,
+                  "Expected register R6 == 0xDEADBEEFCAFEBABE, but R6 == %.16lX", registers[R6]);
+    ck_assert_msg(registers[R5] == 0xFE,
+                  "Expected register R5 == 0xFE, but R5 == %.16lX", registers[R5]);
 
 }
 END_TEST
@@ -600,8 +632,8 @@ START_TEST(test_newr)
         "start:\n"
         "mov R1 $100\n"
         "new R0 R1\n"
-        "mov R0($1)[$0] $1010\n"
-        "mov R1 R0($1)[$0]\n"
+        "mov R0($2)[$0] $1010\n"
+        "mov R1 R0($2)[$0]\n"
         "exit\n"
         );
     ck_assert_msg(registers[R0] != 0,
@@ -695,6 +727,7 @@ TCase *instruction_testcases() {
     tcase_add_test(tc, test_movrr);
     tcase_add_test(tc, test_movrc);
     tcase_add_test(tc, test_struct_new_movro_movor_movoc);
+    tcase_add_test(tc, test_array_indexing);
     tcase_add_test(tc, test_array_new_movro_movor_movoc);
     tcase_add_test(tc, test_incr);
 
