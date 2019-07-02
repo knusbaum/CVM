@@ -455,6 +455,7 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
             }
             bin->a2 = reg_p;
             bin->offset2 = offset;
+            bin->msize = size;
             strcat(instr_name, "o");
         }
         else if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset)) {
@@ -463,7 +464,7 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
             }
             bin->a2 = reg_p;
             bin->offset2 = offset;
-            //bin->msize = sizeof (uintptr_t);
+            bin->msize = sizeof (uintptr_t);
             strcat(instr_name, "o");
         }
         else {

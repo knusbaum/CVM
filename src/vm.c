@@ -220,30 +220,26 @@ movoc:
     switch(bs->msize) {
     case 1:
         ob8 = (uint8_t *)registers[bs->a1];
-        info("Executing [MOVOC] on object %p(%d)[%d], %.2lX\n", ob8, bs->msize, bs->offset, bs->constant);
+//        info("Executing [MOVOC] on object %p(%d)[%d], %.2lX\n", ob8, bs->msize, bs->offset, bs->constant);
         ob8 += bs->offset;
-        info("FINAL POINTER: %p\n", ob8);
         *ob8 = bs->constant;
         break;
     case 2:
         ob16 = (uint16_t *)registers[bs->a1];
-        info("Executing [MOVOC] on object %p(%d)[%d], %.4lX\n", ob16, bs->msize, bs->offset, bs->constant);
+//        info("Executing [MOVOC] on object %p(%d)[%d], %.4lX\n", ob16, bs->msize, bs->offset, bs->constant);
         ob16 += bs->offset;
-        info("FINAL POINTER: %p\n", ob16);
         *ob16 = bs->constant;
         break;
     case 4:
         ob32 = (uint32_t *)registers[bs->a1];
-        info("Executing [MOVOC] on object %p(%d)[%d], %.8lX\n", ob32, bs->msize, bs->offset, bs->constant);
+//        info("Executing [MOVOC] on object %p(%d)[%d], %.8lX\n", ob32, bs->msize, bs->offset, bs->constant);
         ob32 += bs->offset;
-        info("FINAL POINTER: %p\n", ob32);
         *ob32 = bs->constant;
         break;
     case 8:
         ob64 = (uint64_t *)registers[bs->a1];
-        info("Executing [MOVOC] on object %p(%d)[%d], %.16lX\n", ob64, bs->msize, bs->offset, bs->constant);
+//        info("Executing [MOVOC] on object %p(%d)[%d], %.16lX\n", ob64, bs->msize, bs->offset, bs->constant);
         ob64 += bs->offset;
-        info("FINAL POINTER: %p\n", ob64);
         *ob64 = bs->constant;
         break;
     default:
@@ -257,6 +253,9 @@ movoo:
         ob8 = (uint8_t *)registers[bs->a1];
         ob8 += bs->offset;
         ob8_2 = (uint8_t *)registers[bs->a2];
+//        info("Executing [MOVOO] on object %p(%d)[%d], from object %p(%d)[%d]\n",
+//             ob8, bs->msize, bs->offset,
+//             ob8_2, bs->msize, bs->offset2);
         ob8_2 += bs->offset2;
         *ob8 = *ob8_2;
         break;
@@ -264,6 +263,9 @@ movoo:
         ob16 = (uint16_t *)registers[bs->a1];
         ob16 += bs->offset;
         ob16_2 = (uint16_t *)registers[bs->a2];
+//        info("Executing [MOVOO] on object %p(%d)[%d], from object %p(%d)[%d]\n",
+//             ob16, bs->msize, bs->offset,
+//             ob16_2, bs->msize, bs->offset2);
         ob16_2 += bs->offset2;
         *ob16 = *ob16_2;
         break;
@@ -271,6 +273,9 @@ movoo:
         ob32 = (uint32_t *)registers[bs->a1];
         ob32 += bs->offset;
         ob32_2 = (uint32_t *)registers[bs->a2];
+//        info("Executing [MOVOO] on object %p(%d)[%d], from object %p(%d)[%d]\n",
+//             ob32, bs->msize, bs->offset,
+//             ob32_2, bs->msize, bs->offset2);
         ob32_2 += bs->offset2;
         *ob32 = *ob32_2;
         break;
@@ -278,6 +283,9 @@ movoo:
         ob64 = (uint64_t *)registers[bs->a1];
         ob64 += bs->offset;
         ob64_2 = (uint64_t *)registers[bs->a2];
+//        info("Executing [MOVOO] on object %p(%d)[%d], from object %p(%d)[%d]\n",
+//             ob64, bs->msize, bs->offset,
+//             ob64_2, bs->msize, bs->offset2);
         ob64_2 += bs->offset2;
         *ob64 = *ob64_2;
         break;
