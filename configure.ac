@@ -4,6 +4,7 @@
 AC_PREREQ([2.69])
 AC_INIT(CVM, 0.0.1, NULL)
 AM_INIT_AUTOMAKE(CVM, 0.0.1)
+LT_INIT()
 AC_OUTPUT(Makefile src/Makefile tests/Makefile)
 AC_CONFIG_SRCDIR([src/errors.c])
 AC_CONFIG_HEADERS([config.h])
@@ -12,7 +13,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 
 # Checks for libraries.
-AC_SEARCH_LIBS(tcase_name, check, [AC_DEFINE(HAVE_TCASE_NAME, 1, [Define to 1 if libcheck has tcase_name function])])
+AC_CHECK_LIB(check, tcase_name, [AC_DEFINE(HAVE_TCASE_NAME, 1, [Define to 1 if libcheck has tcase_name function])])
 AC_SEARCH_LIBS(GC_malloc, gc, [], AC_MSG_ERROR([library 'gc' is required. See http://www.hboehm.info/gc/]))
 
 
@@ -28,7 +29,6 @@ AC_FUNC_REALLOC
 
 AC_PROG_RANLIB
 
-#AM_PATH_CHECK
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
 AC_OUTPUT
