@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT(CVM, 0.0.1, NULL)
-AM_INIT_AUTOMAKE(CVM, 2.69)
+AM_INIT_AUTOMAKE(CVM, 0.0.1)
 AC_OUTPUT(Makefile src/Makefile tests/Makefile)
 AC_CONFIG_SRCDIR([src/errors.c])
 AC_CONFIG_HEADERS([config.h])
