@@ -66,10 +66,10 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     info("]\n");
     info("instructions: [\n");
     for(int i = 0; i < m->binstr_count; i++) {
-        info("\t%p: { instr: %p, a1: %x, a2: %x, offset: %.16lX extra: %.16lx}\n",
+        info("\t%p: { instr: %p, a1: %x, a2: %x, offset: %.16lX, msize: %d, extra: %.16lx}\n",
              m->binstrs + i,
              m->binstrs[i].instr, m->binstrs[i].a1, m->binstrs[i].a2,
-             m->binstrs[i].offset, m->binstrs[i].constant);
+             m->binstrs[i].offset, m->binstrs[i].msize, m->binstrs[i].constant);
     }
     info("]\n");
     lex_destroy(instrs_p);
@@ -80,13 +80,19 @@ static void add_structure(struct module *m, lexed_instr *instr) {
     struct parsed_struct *structure = GC_MALLOC(sizeof (struct parsed_struct));
     structure->struct_size = 0;
     structure->members = map_create();
-    for(size_t i = 0; i < instr->lexed_struct->member_count; i++) {
+    size_t offset = 0;
+    for(int i = 0; i < instr->lexed_struct->member_count; i++) {
         lexed_member *member = instr->lexed_struct->members + i;
         if(map_present(structure->members, member->name)) {
             fatal("Line %d: Duplicate member %s in structure %s.\n",
                   5, instr->line, member->name, instr->arg1);
         }
-        map_put(structure->members, member->name, (void *)i);
+        struct parsed_member *s_member = GC_MALLOC(sizeof (struct parsed_struct));
+        s_member->name = member->name;
+        s_member->size = (size_t)parse_arg(m, member->size, instr->line);
+        s_member->offset = offset;
+        offset += s_member->size;
+        map_put(structure->members, member->name, (void *)s_member);
         structure->struct_size++;
     }
     map_put(m->structures, instr->arg1, structure);
@@ -123,6 +129,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
     b->a1 = 0;
     b->a2 = 0;
     b->offset = 0;
+    b->msize = 0;
     b->constant = 0;
 
     char *label;
@@ -366,12 +373,12 @@ static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char
     }
     *reg_p = (uintptr_t)map_get(m->instrs_regs, reg);
     //*offset = scanned_offset * scanned_size;
-    *offset = scanned_offset;
+    *offset = scanned_offset * scanned_size;
     *size = scanned_size;
     return 1;
 }
 
-static int parse_structmember(struct module *m, lexed_instr *instr, char *regname, char *reg_p, size_t *offset) {
+static int parse_structmember(struct module *m, lexed_instr *instr, char *regname, char *reg_p, size_t *offset, size_t *size) {
     size_t length = strlen(regname);
     char reg[length];
     char struct_name[length];
@@ -402,7 +409,10 @@ static int parse_structmember(struct module *m, lexed_instr *instr, char *regnam
               6, instr->line, struct_member, struct_name);
         return 0;
     }
-    *offset = (size_t)map_get(st->members, struct_member);
+    //*offset = (size_t)map_get(st->members, struct_member);
+    struct parsed_member *s_member = map_get(st->members, struct_member);
+    *offset = s_member->offset;
+    *size = s_member->size;
     return 1;
 }
 
@@ -428,10 +438,11 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
             strcat(instr_name, "o");
             first_is_offset = 1;
         }
-        else if(parse_structmember(m, instr, instr->arg1, &reg_p, &offset)) {
+        else if(parse_structmember(m, instr, instr->arg1, &reg_p, &offset, &size)) {
             bin->a1 = reg_p;
             bin->offset = offset;
-            bin->msize = sizeof (uintptr_t);
+            info("STRUCT OFFSET: %d\n", offset);
+            bin->msize = size;
             strcat(instr_name, "o");
             first_is_offset = 1;
         }
@@ -458,13 +469,14 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
             bin->msize = size;
             strcat(instr_name, "o");
         }
-        else if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset)) {
-            if(first_is_offset && sizeof (uintptr_t) != bin->msize) {
+        else if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset, &size)) {
+            if(first_is_offset && size != bin->msize) {
                 fatal("Memory -> memory copy size mismatch: %d != %d. %s : %d\n", 7, bin->msize, sizeof (uintptr_t), m->filename, instr->line);
             }
             bin->a2 = reg_p;
             bin->offset2 = offset;
-            bin->msize = sizeof (uintptr_t);
+            info("STRUCT OFFSET: %d\n", offset);
+            bin->msize = size;
             strcat(instr_name, "o");
         }
         else {

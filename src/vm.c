@@ -68,7 +68,7 @@ map_t *regmap;
 
 static void __vm(struct module *module, map_t **vm_map) {
     void *target;
-//    unsigned char *ob, *ob2;
+    unsigned char *ob, *ob2;
     uint8_t *ob8, *ob8_2;
     uint16_t *ob16, *ob16_2;
     uint32_t *ob32, *ob32_2;
@@ -154,29 +154,38 @@ movrc:
     registers[bs->a1] = bs->constant;
     NEXTI;
 movro:
+    ob = (unsigned char *)registers[bs->a2];
+    info("Executing [MOVRO] on reg %d, object %p(%d)[%d]<%d>\n",
+         bs->a1, ob, bs->msize, bs->offset2 / bs->msize, bs->offset2);
+    ob += bs->offset2;
+
     switch(bs->msize) {
     case 1:
-        ob8 = (uint8_t *)registers[bs->a2];
+        //ob8 = (uint8_t *)registers[bs->a2];
 //        info("Executing [MOVRO] on reg %d, object %p(%d)[%d]\n", bs->a1, ob8, bs->msize, bs->offset2);
-        ob8 += bs->offset2;
+        //ob8 += bs->offset2;
+        ob8 = (uint8_t *)ob;
         registers[bs->a1] = *ob8;
         break;
     case 2:
-        ob16 = (uint16_t *)registers[bs->a2];
+        //ob16 = (uint16_t *)registers[bs->a2];
 //        info("Executing [MOVRO] on reg %d, object %p(%d)[%d]\n", bs->a1, ob16, bs->msize, bs->offset2);
-        ob16 += bs->offset2;
+        //ob16 += bs->offset2;
+        ob16 = (uint16_t *)ob;
         registers[bs->a1] = *ob16;
         break;
     case 4:
-        ob32 = (uint32_t *)registers[bs->a2];
+        //ob32 = (uint32_t *)registers[bs->a2];
 //        info("Executing [MOVRO] on reg %d, object %p(%d)[%d]\n", bs->a1, ob32, bs->msize, bs->offset2);
-        ob32 += bs->offset2;
+        //ob32 += bs->offset2;
+        ob32 = (uint32_t *)ob;
         registers[bs->a1] = *ob32;
         break;
     case 8:
-        ob64 = (uint64_t *)registers[bs->a2];
+        //ob64 = (uint64_t *)registers[bs->a2];
 //        info("Executing [MOVRO] on reg %d, object %p(%d)[%d]\n", bs->a1, ob64, bs->msize, bs->offset2);
-        ob64 += bs->offset2;
+        //ob64 += bs->offset2;
+        ob64 = (uint64_t *)ob;
         registers[bs->a1] = *ob64;
         break;
     default:
@@ -185,29 +194,38 @@ movro:
     }
     NEXTI;
 movor:
+    ob = (unsigned char *)registers[bs->a1];
+    info("Executing [MOVOR] on object %p(%d)[%d]<%d>, reg %d\n",
+         ob, bs->msize, bs->offset / bs->msize, bs->offset, bs->a2);
+    ob += bs->offset;
+
     switch(bs->msize) {
     case 1:
-        ob8 = (uint8_t *)registers[bs->a1];
+        //ob8 = (uint8_t *)registers[bs->a1];
 //        info("Executing [MOVOR] on object %p(%d)[%d], reg %d\n", ob8, bs->msize, bs->offset, bs->a2);
-        ob8 += bs->offset;
+        //ob8 += bs->offset;
+        ob8 = (uint8_t *)ob;
         *ob8 = registers[bs->a2];
         break;
     case 2:
-        ob16 = (uint16_t *)registers[bs->a1];
+        //ob16 = (uint16_t *)registers[bs->a1];
 //        info("Executing [MOVOR] on object %p(%d)[%d], reg %d\n", ob16, bs->msize, bs->offset, bs->a2);
-        ob16 += bs->offset;
+        //ob16 += bs->offset;
+        ob16 = (uint16_t *)ob;
         *ob16 = registers[bs->a2];
         break;
     case 4:
-        ob32 = (uint32_t *)registers[bs->a1];
+        //ob32 = (uint32_t *)registers[bs->a1];
 //        info("Executing [MOVOR] on object %p(%d)[%d], reg %d\n", ob32, bs->msize, bs->offset, bs->a2);
-        ob32 += bs->offset;
+        //ob32 += bs->offset;
+        ob32 = (uint32_t *)ob;
         *ob32 = registers[bs->a2];
         break;
     case 8:
-        ob64 = (uint64_t *)registers[bs->a1];
+        //ob64 = (uint64_t *)registers[bs->a1];
 //        info("Executing [MOVOR] on object %p(%d)[%d], reg %d\n", ob64, bs->msize, bs->offset, bs->a2);
-        ob64 += bs->offset;
+        //ob64 += bs->offset;
+        ob64 = (uint64_t *)ob;
         *ob64 = registers[bs->a2];
         break;
     default:
@@ -217,29 +235,38 @@ movor:
 
     NEXTI;
 movoc:
+    ob = (unsigned char *)registers[bs->a2];
+    info("Executing [MOVOC] on object %p(%d)[%d]<%d>, %.2lX\n",
+         ob, bs->msize, bs->offset / bs->msize, bs->offset, bs->constant);
+    ob += bs->offset;
+
     switch(bs->msize) {
     case 1:
-        ob8 = (uint8_t *)registers[bs->a1];
+        //ob8 = (uint8_t *)registers[bs->a1];
 //        info("Executing [MOVOC] on object %p(%d)[%d], %.2lX\n", ob8, bs->msize, bs->offset, bs->constant);
-        ob8 += bs->offset;
+        //ob8 += bs->offset;
+        ob8 = (uint8_t *)ob;
         *ob8 = bs->constant;
         break;
     case 2:
-        ob16 = (uint16_t *)registers[bs->a1];
+        //ob16 = (uint16_t *)registers[bs->a1];
 //        info("Executing [MOVOC] on object %p(%d)[%d], %.4lX\n", ob16, bs->msize, bs->offset, bs->constant);
-        ob16 += bs->offset;
+        //ob16 += bs->offset;
+        ob16 = (uint16_t *)ob;
         *ob16 = bs->constant;
         break;
     case 4:
-        ob32 = (uint32_t *)registers[bs->a1];
+        //ob32 = (uint32_t *)registers[bs->a1];
 //        info("Executing [MOVOC] on object %p(%d)[%d], %.8lX\n", ob32, bs->msize, bs->offset, bs->constant);
-        ob32 += bs->offset;
+        //ob32 += bs->offset;
+        ob32 = (uint32_t *)ob;
         *ob32 = bs->constant;
         break;
     case 8:
-        ob64 = (uint64_t *)registers[bs->a1];
+        //ob64 = (uint64_t *)registers[bs->a1];
 //        info("Executing [MOVOC] on object %p(%d)[%d], %.16lX\n", ob64, bs->msize, bs->offset, bs->constant);
-        ob64 += bs->offset;
+        //ob64 += bs->offset;
+        ob64 = (uint64_t *)ob;
         *ob64 = bs->constant;
         break;
     default:
@@ -248,45 +275,62 @@ movoc:
     }
     NEXTI;
 movoo:
+    ob = (uint8_t *)registers[bs->a1];
+    ob2 = (uint8_t *)registers[bs->a2];
+    info("Executing [MOVOO] on object %p(%d)[%d]<%d>, from object %p(%d)[%d]<%d>\n",
+         ob, bs->msize, bs->offset / bs->msize, bs->offset,
+         ob2, bs->msize, bs->offset2 / bs->msize, bs->offset2);
+
+    ob += bs->offset;
+    ob2 += bs->offset2;
+
     switch(bs->msize) {
     case 1:
-        ob8 = (uint8_t *)registers[bs->a1];
-        ob8 += bs->offset;
-        ob8_2 = (uint8_t *)registers[bs->a2];
+        //ob8 = (uint8_t *)registers[bs->a1];
+        //ob8 += bs->offset;
+        //ob8_2 = (uint8_t *)registers[bs->a2];
 //        info("Executing [MOVOO] on object %p(%d)[%d], from object %p(%d)[%d]\n",
 //             ob8, bs->msize, bs->offset,
 //             ob8_2, bs->msize, bs->offset2);
-        ob8_2 += bs->offset2;
+        //ob8_2 += bs->offset2;
+        ob8 = (uint8_t *)ob;
+        ob8_2 = (uint8_t *)ob2;
         *ob8 = *ob8_2;
         break;
     case 2:
-        ob16 = (uint16_t *)registers[bs->a1];
-        ob16 += bs->offset;
-        ob16_2 = (uint16_t *)registers[bs->a2];
+        //ob16 = (uint16_t *)registers[bs->a1];
+        //ob16 += bs->offset;
+        //ob16_2 = (uint16_t *)registers[bs->a2];
 //        info("Executing [MOVOO] on object %p(%d)[%d], from object %p(%d)[%d]\n",
 //             ob16, bs->msize, bs->offset,
 //             ob16_2, bs->msize, bs->offset2);
-        ob16_2 += bs->offset2;
+        //ob16_2 += bs->offset2;
+        ob16 = (uint16_t *)ob;
+        ob16_2 = (uint16_t *)ob2;
         *ob16 = *ob16_2;
         break;
     case 4:
-        ob32 = (uint32_t *)registers[bs->a1];
-        ob32 += bs->offset;
-        ob32_2 = (uint32_t *)registers[bs->a2];
+        //ob32 = (uint32_t *)registers[bs->a1];
+        //ob32 += bs->offset;
+        //ob32_2 = (uint32_t *)registers[bs->a2];
 //        info("Executing [MOVOO] on object %p(%d)[%d], from object %p(%d)[%d]\n",
 //             ob32, bs->msize, bs->offset,
 //             ob32_2, bs->msize, bs->offset2);
-        ob32_2 += bs->offset2;
+        //ob32_2 += bs->offset2;
+        ob32 = (uint32_t *)ob;
+        ob32_2 = (uint32_t *)ob2;
         *ob32 = *ob32_2;
         break;
     case 8:
-        ob64 = (uint64_t *)registers[bs->a1];
-        ob64 += bs->offset;
-        ob64_2 = (uint64_t *)registers[bs->a2];
+        //ob64 = (uint64_t *)registers[bs->a1];
+        //ob64 += bs->offset;
+        //ob64_2 = (uint64_t *)registers[bs->a2];
 //        info("Executing [MOVOO] on object %p(%d)[%d], from object %p(%d)[%d]\n",
 //             ob64, bs->msize, bs->offset,
 //             ob64_2, bs->msize, bs->offset2);
-        ob64_2 += bs->offset2;
+        //ob64_2 += bs->offset2;
+        ob64 = (uint64_t *)ob;
+        ob64_2 = (uint64_t *)ob2;
         *ob64 = *ob64_2;
         break;
     default:
@@ -434,13 +478,13 @@ jle:
     NEXTI;
 
 newc:
-    registers[bs->a1] = (uintptr_t)GC_MALLOC(bs->constant * sizeof (void *));
+    registers[bs->a1] = (uintptr_t)GC_MALLOC(bs->constant);
 //    info("Executing [NEW] object at %p in reg %d size %lu\n",
 //         registers[bs->a1], bs->a1, bs->constant * sizeof (void *));
     NEXTI;
 
 newr:
-    registers[bs->a1] = (uintptr_t)GC_MALLOC(registers[bs->a2] * sizeof (void *));
+    registers[bs->a1] = (uintptr_t)GC_MALLOC(registers[bs->a2]);
 //    info("Executing [NEW] object at %p in reg %d size %lu\n",
 //         registers[bs->a1], bs->a1, bs->constant * sizeof (void *));
     NEXTI;

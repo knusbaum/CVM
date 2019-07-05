@@ -25,7 +25,7 @@ fib:
     jle return_one
 
     push R0
-    add R0 $-1
+    sub R0 $1
     call fib
 
     ## Restore our original target number
@@ -33,7 +33,7 @@ fib:
     ## Save the result of fib(N - 1)
     push R1
 
-    add R0 $-2
+    sub R0 $2
     call fib
     ## fib(N - 2) is now in R1
 

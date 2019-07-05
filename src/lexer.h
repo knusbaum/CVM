@@ -28,6 +28,7 @@ enum token_type {
 
 typedef struct lexed_member {
     char *name;
+    char *size;
 } lexed_member;
 
 typedef struct lexed_struct {

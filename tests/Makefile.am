@@ -8,4 +8,4 @@ TESTS = check_cvm
 check_PROGRAMS=check_cvm
 check_cvm_SOURCES=test.c map_test.c harness.c test_instructions.c test_advanced.c
 check_cvm_CFLAGS=@CHECK_CFLAGS@
-check_cvm_LDADD = $(top_builddir)/src/libcvm.a @CHECK_LIBS@
+check_cvm_LDADD = $(top_builddir)/src/libcvm.la @CHECK_LIBS@

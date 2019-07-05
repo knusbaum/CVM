@@ -49,7 +49,8 @@ START_TEST(test_struct_new_movro_movor_movoc)
     run_testcode(
         // Create struct foo (struct)
         "struct foo\n"
-        "bar\n"
+        "bar $8\n"
+        "baz $8\n"
         "endstruct\n"
 
         "start:\n"
@@ -58,23 +59,61 @@ START_TEST(test_struct_new_movro_movor_movoc)
 
         // Populate foo.bar with 10 (movor)
         "mov R1 0xFEEDBAAC\n"
+        "mov R2 0xCAFEBABE\n"
         "mov R0(foo.bar) R1\n"
+        "mov R0(foo.baz) R2\n"
 
-        // move foo.bar into R2 (movro)
-        "mov R2 R0(foo.bar)\n"
+        // move foo.bar into R3 (movro)
+        "mov R3 R0(foo.bar)\n"
 
         // Populate foo.bar with $12 (movoc)
         "mov R0(foo.bar) $12\n"
-        "mov R3 R0(foo.bar)\n"
+        "mov R4 R0(foo.bar)\n"
+
+
+        "mov R5 R0(foo.baz)\n"
+
         "exit\n"
         );
 
     ck_assert_msg(registers[R0] != 0,
                   "Expected register R0 != 0, but R0 == %d", registers[R0]);
-    ck_assert_msg(registers[R2] == 0xFEEDBAAC,
-                  "Expected register R2 == 0xFEEDBAAC, but R2 == %.16lX", registers[R2]);
-    ck_assert_msg(registers[R3] == 12,
-                  "Expected register R3 == 12, but R3 == %d", registers[R3]);
+    ck_assert_msg(registers[R3] == 0xFEEDBAAC,
+                  "Expected register R3 == 0xFEEDBAAC, but R3 == %.16lX", registers[R3]);
+    ck_assert_msg(registers[R4] == 12,
+                  "Expected register R4 == 12, but R4 == %d", registers[R4]);
+    ck_assert_msg(registers[R5] == 0xCAFEBABE,
+                  "Expected register R5 == 12, but R5 == %.16lX", registers[R5]);
+
+}
+END_TEST
+
+START_TEST(test_struct_sized_members)
+{
+    PRINT_TEST_NAME
+    run_testcode(
+        // Create struct foo (struct)
+        "struct foo\n"
+        "bar $4\n"
+        "baz $4\n"
+        "endstruct\n"
+
+        "start:\n"
+        // Create a foo (new)
+        "new R0 foo\n"
+
+        "mov R1 0xFEEDBAAC\n"
+        "mov R2 0xCAFEBABE\n"
+        "mov R0(foo.bar) R1\n"
+        "mov R0(foo.baz) R2\n"
+
+        "mov R3 R0($8)[$0]\n"
+
+        "exit\n"
+        );
+
+    ck_assert_msg(registers[R3] == 0xCAFEBABEFEEDBAAC,
+                  "Expected register R3 == 0xCAFEBABEFEEDBAAC, but R3 == %.16lX", registers[R3]);
 
 }
 END_TEST
@@ -727,6 +766,7 @@ TCase *instruction_testcases() {
     tcase_add_test(tc, test_movrr);
     tcase_add_test(tc, test_movrc);
     tcase_add_test(tc, test_struct_new_movro_movor_movoc);
+    tcase_add_test(tc, test_struct_sized_members);
     tcase_add_test(tc, test_array_indexing);
     tcase_add_test(tc, test_array_new_movro_movor_movoc);
     tcase_add_test(tc, test_incr);

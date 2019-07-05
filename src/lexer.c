@@ -185,11 +185,20 @@ static void lex_struct(lexed_struct *s, FILE *f) {
         }
         char *member_name = lex_white_separated(f);
         consume_space(f);
+        char *size = lex_white_separated(f);
+        if(member_name == NULL) {
+            fatal("%lu:%lu Expected struct member name, but found nothing.\n", 1, line_number, char_number);
+        }
         match_char('\n', f);
 
         if(strcmp(member_name, "endstruct") == 0) {
             return;
         }
+
+        if (size == NULL) {
+            fatal("%lu:%lu Expected struct member size, but found nothing.\n", 1, line_number, char_number);
+        }
+
         info("Adding member %s to struct.\n", member_name);
 
         if(s->member_count == s->member_length) {
@@ -198,14 +207,16 @@ static void lex_struct(lexed_struct *s, FILE *f) {
             s->members = GC_REALLOC(s->members, s->member_length * sizeof (lexed_member));
         }
 
-        s->members[s->member_count++].name = member_name;
+        s->members[s->member_count].name = member_name;
+        s->members[s->member_count++].size = size;
+        info("SIZE: %s\n", size);
     }
 }
 
 static void parse_data(lexed_instr *i, FILE *f) {
     writable_buffer buf;
     createbuffer(&buf);
-    
+
     consume_space(f);
     if(look == ',') {
         get_char(f);
@@ -245,7 +256,7 @@ static void next_instruction(lexed_instr *i, FILE *f) {
     i->line = line_number;
     i->instr = lex_white_separated(f);
     apply_type(i);
-    
+
     consume_space(f);
     i->arg1 = lex_white_separated(f);
 
@@ -254,7 +265,7 @@ static void next_instruction(lexed_instr *i, FILE *f) {
         parse_data(i, f);
         return;
     }
-    
+
     consume_space(f);
     i->arg2 = lex_white_separated(f);
     consume_space(f);
@@ -281,7 +292,7 @@ lexed_instr *lex_module(char *filename) {
         perror("");
         abort();
     }
-    
+
     lexer_init(source);
 
     int instrs_scale = 1;

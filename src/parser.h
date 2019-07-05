@@ -12,6 +12,12 @@ struct binstr {
     };
 };
 
+struct parsed_member {
+    char *name;
+    size_t size;
+    size_t offset;
+};
+
 struct parsed_struct {
     size_t struct_size;
     map_t *members;
