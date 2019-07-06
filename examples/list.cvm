@@ -2,12 +2,12 @@
 module list
 
 struct node
-    next
-    val
+    next $4
+    val  $8
 endstruct
 
 struct list
-    head
+    head $8
 endstruct
 
 

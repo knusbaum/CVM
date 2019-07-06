@@ -84,8 +84,8 @@ static void add_structure(struct module *m, lexed_instr *instr) {
     for(int i = 0; i < instr->lexed_struct->member_count; i++) {
         lexed_member *member = instr->lexed_struct->members + i;
         if(map_present(structure->members, member->name)) {
-            fatal("Line %d: Duplicate member %s in structure %s.\n",
-                  5, instr->line, member->name, instr->arg1);
+            fatal("Duplicate member %s in structure %s. %s:%d\n",
+                  5, member->name, instr->arg1, instr->line, m->filename);
         }
         struct parsed_member *s_member = GC_MALLOC(sizeof (struct parsed_struct));
         s_member->name = member->name;
@@ -137,7 +137,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
     case MODULE:
         ensure_one_arg(m, instr);
         if(m->modname != NULL) {
-            fatal("Multiple module definition in file: %s : %lu\n", 4, m->filename, instr->line);
+            fatal("Multiple module definition in file: %s:%lu\n", 4, m->filename, instr->line);
         }
         char *modname = GC_MALLOC(strlen(instr->arg1) + 1);
         strcpy(modname, instr->arg1);
@@ -215,7 +215,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         ensure_two_arg(m, instr);
         info("Creating struct with name %s\n", instr->arg1);
         if(map_present(m->structures, instr->arg1)) {
-            fatal("Line %d: Redefinition of struct %s.\n", 4, instr->line, instr->arg1);
+            fatal("Redefinition of struct %s. %s:%d\n", 4, instr->arg1, m->filename, instr->line);
         }
         add_structure(m, instr);
         break;
@@ -226,8 +226,8 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
             b->a1 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
         }
         else {
-            fatal("Line %d: No such register %s\n",
-                  7, instr->line, instr->arg1);
+            fatal("No such register %s. %s:%d\n",
+                  7, instr->arg1, m->filename, instr->line);
         }
         break;
     case NEW:
@@ -276,8 +276,8 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
     case POP:
         ensure_one_arg(m, instr);
         if(!map_present(m->instrs_regs, instr->arg1)) {
-            fatal("Line %d: No such register %s\n",
-                  10, instr->line, instr->arg1);
+            fatal("No such register %s. %s:%d\n",
+                  10, instr->arg1, m->filename, instr->line);
         }
         b->instr = get_instr(m, instr->line, "popr");
         b->a1 = (uintptr_t)map_get(m->instrs_regs, instr->arg1);
@@ -302,7 +302,7 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         map_put(m->data, instr->arg1, instr->arg2);
         break;
     default:
-        fatal("INSTRUCTION NOT IMPLEMENTED: [%s] %s : %lu\n",
+        fatal("INSTRUCTION NOT IMPLEMENTED: [%s] %s:%lu\n",
               6, instr->instr, m->filename, instr->line);
         break;
     }
@@ -326,26 +326,26 @@ static void ensure_export_space(struct module *m) {
 
 static void ensure_zero_arg(struct module *m, lexed_instr *instr) {
     if(instr->arg1 != NULL || instr->arg2 != NULL) {
-        fatal("Expected no args: %s : %lu\n", 5, m->filename, instr->line);
+        fatal("Expected no args: %s:%lu\n", 5, m->filename, instr->line);
     }
 }
 
 static void ensure_one_arg(struct module *m, lexed_instr *instr) {
     if(instr->arg1 == NULL || instr->arg2 != NULL) {
-        fatal("Expected one arg: %s : %lu\n", 5, m->filename, instr->line);
+        fatal("Expected one arg: %s:%lu\n", 5, m->filename, instr->line);
     }
 }
 
 static void ensure_two_arg(struct module *m, lexed_instr *instr) {
     if(instr->arg1 == NULL || instr->arg2 == NULL) {
-        fatal("Expected no args: %s : %lu\n", 5, m->filename, instr->line);
+        fatal("Expected no args: %s:%lu\n", 5, m->filename, instr->line);
     }
 }
 
 static void *get_instr(struct module *m, int line, char * instr) {
     void * istr = map_get(m->instrs_regs, instr);
     if(istr == NULL) {
-        fatal("Instruction %s not found. %s : %d\n", 6,
+        fatal("Instruction %s not found. %s:%d\n", 6,
               instr, m->filename, line);
     }
     return istr;
@@ -363,13 +363,13 @@ static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char
     }
 
     if(!map_present(m->instrs_regs, reg)) {
-        fatal("Line %d: No such register: %s\n",
-              instr->line, reg);
+        fatal("No such register: %s. %s:%d\n",
+              reg, m->filename, instr->line);
         return 0;
     }
     if(scanned_size < 1 || scanned_size > sizeof (uintptr_t)) {
-        fatal("Line %d: Size must be between 1 and %ld.\n",
-              instr->line, sizeof (uintptr_t));
+        fatal("Size must be between 1 and %ld. %s:%d\n",
+              sizeof (uintptr_t), m->filename, instr->line);
     }
     *reg_p = (uintptr_t)map_get(m->instrs_regs, reg);
     //*offset = scanned_offset * scanned_size;
@@ -391,22 +391,22 @@ static int parse_structmember(struct module *m, lexed_instr *instr, char *regnam
     }
 
     if(!map_present(m->instrs_regs, reg)) {
-        fatal("Line %d: No such register: %s\n",
-              instr->line, reg);
+        fatal("No such register: %s. %s:%d\n",
+              reg, m->filename, instr->line);
         return 0;
     }
     *reg_p = (uintptr_t)map_get(m->instrs_regs, reg);
 
     struct parsed_struct *st = map_get(m->structures, struct_name);
     if(!st) {
-        fatal("Line %d: No such struct: %s\n",
-              instr->line, struct_name);
+        fatal("No such struct: %s. %s:%d\n",
+              struct_name, m->filename, instr->line);
         return 0;
     }
 
     if(!map_present(st->members, struct_member)) {
-        fatal("Line %d: No such member %s in struct: %s\n",
-              6, instr->line, struct_member, struct_name);
+        fatal("No such member %s in struct: %s. %s:%d\n",
+              6, struct_member, struct_name, m->filename, instr->line);
         return 0;
     }
     //*offset = (size_t)map_get(st->members, struct_member);
@@ -447,7 +447,7 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
             first_is_offset = 1;
         }
         else {
-            fatal("Target must be a register. Moving to memory not implemented. %s : %d\n", 6,
+            fatal("Target must be a register. Moving to memory not implemented. %s:%d\n", 6,
                   m->filename, instr->line);
         }
     }
@@ -462,7 +462,7 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
         size_t size;
         if(parse_offset(m, instr, instr->arg2, &reg_p, &offset, &size)) {
             if(first_is_offset && size != bin->msize) {
-                fatal("Memory -> memory copy size mismatch: %d != %d. %s : %d\n", 7, bin->msize, size, m->filename, instr->line);
+                fatal("Memory -> memory copy size mismatch: %d != %d. %s:%d\n", 7, bin->msize, size, m->filename, instr->line);
             }
             bin->a2 = reg_p;
             bin->offset2 = offset;
@@ -471,7 +471,7 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
         }
         else if(parse_structmember(m, instr, instr->arg2, &reg_p, &offset, &size)) {
             if(first_is_offset && size != bin->msize) {
-                fatal("Memory -> memory copy size mismatch: %d != %d. %s : %d\n", 7, bin->msize, sizeof (uintptr_t), m->filename, instr->line);
+                fatal("Memory -> memory copy size mismatch: %d != %d. %s:%d\n", 7, bin->msize, sizeof (uintptr_t), m->filename, instr->line);
             }
             bin->a2 = reg_p;
             bin->offset2 = offset;
@@ -495,27 +495,27 @@ static uintptr_t parse_arg(struct module *m, char *arg, unsigned long line) {
         scanned = sscanf(arg, "0x%lx", &x);
     }
     if(scanned < 1) {
-        fatal("Line %d: Failed to scan constant from string \"%s\"\n",
-              8, line, arg);
+        fatal("Failed to scan constant from string \"%s\". %s:%d\n",
+              8, arg, m->filename, line);
     }
     return x;
 }
 
-static void *module_call_lookup(char *label) {
+static void *module_call_lookup(struct module *m, unsigned long line, char *label) {
     char modname[1024]; // Static size is bad. Can cause overruns. Do something smarter here.
     char target_label[1024];
     int ret = sscanf(label, "%[^.].%s", modname, target_label);
     if(ret != 2) {
-        fatal("1Can't call label: [%s] because it doesn't exist.\n", 7, label);
+        fatal("1Can't call label: [%s] because it doesn't exist. %s:%d\n", 7, label, m->filename, line);
     }
     struct module *module = lookup_module(modname);
     if(module == NULL) {
-        fatal("2Can't call label: [%s] because it doesn't exist.\n", 7, label);
+        fatal("2Can't call label: [%s] because it doesn't exist. %s:%d\n", 7, label, m->filename, line);
     }
 
     void *target = map_get(module->labels, target_label);
     if(target == NULL) {
-        fatal("3Can't call label: [%s] because it doesn't exist.\n", 7, label);
+        fatal("3Can't call label: [%s] because it doesn't exist. %s:%d\n", 7, label, m->filename, line);
     }
     info("Found remote target @ %p\n", target);
     return target;
@@ -564,7 +564,7 @@ static void calculate_jump(struct module *m, struct binstr *bs) {
     case CALLCALC:
         target = map_get(m->labels, bs->label);
         if(target == NULL) {
-            bs->target = module_call_lookup(bs->label);
+            bs->target = module_call_lookup(m, bs->instr->line, bs->label);
             bs->instr = get_instr(m, 0, "call");
         }
         else {
