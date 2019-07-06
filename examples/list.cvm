@@ -2,7 +2,7 @@
 module list
 
 struct node
-    next $4
+    next $8
     val  $8
 endstruct
 

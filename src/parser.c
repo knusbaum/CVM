@@ -363,12 +363,12 @@ static int parse_offset(struct module *m, lexed_instr *instr, char *regoff, char
     }
 
     if(!map_present(m->instrs_regs, reg)) {
-        fatal("No such register: %s. %s:%d\n",
+        fatal("No such register: %s. %s:%d\n", 6,
               reg, m->filename, instr->line);
         return 0;
     }
     if(scanned_size < 1 || scanned_size > sizeof (uintptr_t)) {
-        fatal("Size must be between 1 and %ld. %s:%d\n",
+        fatal("Size must be between 1 and %ld. %s:%d\n", 6,
               sizeof (uintptr_t), m->filename, instr->line);
     }
     *reg_p = (uintptr_t)map_get(m->instrs_regs, reg);
@@ -391,7 +391,7 @@ static int parse_structmember(struct module *m, lexed_instr *instr, char *regnam
     }
 
     if(!map_present(m->instrs_regs, reg)) {
-        fatal("No such register: %s. %s:%d\n",
+        fatal("No such register: %s. %s:%d\n", 6,
               reg, m->filename, instr->line);
         return 0;
     }
@@ -399,7 +399,7 @@ static int parse_structmember(struct module *m, lexed_instr *instr, char *regnam
 
     struct parsed_struct *st = map_get(m->structures, struct_name);
     if(!st) {
-        fatal("No such struct: %s. %s:%d\n",
+        fatal("No such struct: %s. %s:%d\n", 6,
               struct_name, m->filename, instr->line);
         return 0;
     }
@@ -564,7 +564,7 @@ static void calculate_jump(struct module *m, struct binstr *bs) {
     case CALLCALC:
         target = map_get(m->labels, bs->label);
         if(target == NULL) {
-            bs->target = module_call_lookup(m, bs->instr->line, bs->label);
+            bs->target = module_call_lookup(m, 0, bs->label);
             bs->instr = get_instr(m, 0, "call");
         }
         else {
