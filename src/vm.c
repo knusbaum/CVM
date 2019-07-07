@@ -211,8 +211,8 @@ movor:
 
     NEXTI;
 movoc:
-    ob = (unsigned char *)registers[bs->a2];
-    info("Executing [MOVOC] on object %p(%d)[%d]<%d>, %.2lX\n",
+    ob = (unsigned char *)registers[bs->a1];
+    info("Executing [MOVOC] on object %p(%d)[%d]<%d>, %.16lX\n",
          ob, bs->msize, bs->offset / bs->msize, bs->offset, bs->constant);
     ob += bs->offset;
 
