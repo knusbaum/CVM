@@ -1,9 +1,9 @@
 struct binstr {
     void *instr;
-    unsigned char a1;
-    unsigned char a2;
+    unsigned char a1 : 4;
+    unsigned char a2 : 4;
+    size_t msize : 4;
     size_t offset;
-    size_t msize;
     union {
         uintptr_t constant;
         char *label;

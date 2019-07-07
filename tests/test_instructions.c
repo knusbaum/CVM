@@ -96,6 +96,8 @@ START_TEST(test_struct_sized_members)
         "struct foo\n"
         "bar $4\n"
         "baz $4\n"
+        "dar $4\n"
+        "daz $8\n"
         "endstruct\n"
 
         "start:\n"
@@ -109,11 +111,26 @@ START_TEST(test_struct_sized_members)
 
         "mov R3 R0($8)[$0]\n"
 
+
+        "mov R4 0x01234567ABCDEF99\n"
+        "mov R0(foo.daz) R4\n"
+
+        "mov R5 0xDEADBEEF\n"
+        "mov R0(foo.dar) R5\n"
+
+        "mov R6 R0(foo.daz)\n"
+        "mov R7 R0(foo.dar)\n"
+
         "exit\n"
         );
 
     ck_assert_msg(registers[R3] == 0xCAFEBABEFEEDBAAC,
                   "Expected register R3 == 0xCAFEBABEFEEDBAAC, but R3 == %.16lX", registers[R3]);
+    ck_assert_msg(registers[R6] == 0x01234567ABCDEF99,
+                  "Expected register R6 == 0x01234567ABCDEF99, but R6 == %.16lX", registers[R6]);
+    ck_assert_msg(registers[R7] == 0xDEADBEEF,
+                  "Expected register R7 == 0xDEADBEEF, but R7 == %.16lX", registers[R7]);
+
 
 }
 END_TEST
