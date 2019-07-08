@@ -40,7 +40,10 @@ struct module *parse_module(char * filename, map_t *instrs_regs) {
     lexed_instr *instrs = instrs_p;
     struct module *m = GC_MALLOC(sizeof (struct module));
 
-    m->filename = filename;
+    char *newfname = GC_MALLOC(strlen(filename) + 1);
+    strcpy(newfname, filename);
+
+    m->filename = newfname;
     m->modname = NULL;
     m->export_space = 0;
     m->export_count = 0;
@@ -233,7 +236,6 @@ static void load_relative(struct module *m, char *modname) {
     dirname(filename);
     strcat(filename, "/");
     strcat(filename, modname);
-//    info("IMPORTING: %s\n", filename);
     load_module(filename);
 }
 

@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <string.h>
 #include <ffi.h>
 #include "gc.h"
 #include "errors.h"
@@ -13,8 +14,6 @@
 uintptr_t stack[STACKSIZE];
 uintptr_t registers[15];
 uintptr_t flags;
-
-static void register_module(struct module *module);
 
 map_t *get_registers() {
     map_t *m = map_create();
@@ -504,12 +503,64 @@ exit:
     return;
 }
 
+map_t *module_registry;
+map_t *module_filename_registry;
+map_t *module_cycle_detect;
+
+static void setup_maps() {
+    if(module_registry == NULL) {
+        module_registry = map_create();
+    }
+    if(module_filename_registry == NULL) {
+        module_filename_registry = map_create();
+    }
+    if(module_cycle_detect == NULL) {
+        module_cycle_detect = map_create();
+    }
+}
+
 struct module *load_module(char *filename) {
+    //info("LOADING MODULE FROM %s\n", filename);
     map_t *vm_map;
     __vm(NULL, &vm_map);
+
+    char *newfname = GC_MALLOC(strlen(filename) + 1);
+    strcpy(newfname, filename);
+
+    setup_maps();
+
+    if(map_get(module_filename_registry, filename) != NULL) {
+        //info("ALREADY LOADED MODULE FROM %s\n", filename);
+        return NULL;
+    }
+
+    if(map_get(module_cycle_detect, newfname) != NULL) {
+        fatal("Circular dependency detected when loading %s\n", 10, newfname);
+    }
+    map_put(module_cycle_detect, newfname, (void *)0x1);
+
+
     struct module *module = parse_module(filename, vm_map);
-    register_module(module);
-    info("Successfully loaded module %s.\n", module->modname);
+
+    //info("LOADED MODULE: %p (%s, %s)\n", module, module->modname, module->filename);
+    if(module_registry != NULL) {
+        struct module *existing = map_get(module_registry, module->modname);
+        if(existing) {
+            //info("HAVE EXISTING MODULE: %p (%s, %s)\n", existing, existing->modname, existing->filename);
+            if(strcmp(existing->filename, filename) != 0) {
+                fatal("Conflicting module definition for %s (%s, %s)\n", 10,
+                      module->modname, module->filename, existing->filename);
+            }
+            map_delete(module_cycle_detect, newfname);
+            return NULL;
+        }
+    }
+
+
+    map_put(module_filename_registry, newfname, (void *)0x1);
+    map_put(module_registry, module->modname, module);
+    //info("Successfully loaded module %s.\n", module->modname);
+    map_delete(module_cycle_detect, newfname);
     return module;
 }
 
@@ -517,15 +568,6 @@ void run_module(struct module *module) {
     info("Running module %s\n", module->modname);
     __vm(module, NULL);
     destroy_module(module);
-}
-
-map_t *module_registry;
-
-static void register_module(struct module *module) {
-    if(module_registry == NULL) {
-        module_registry = map_create();
-    }
-    map_put(module_registry, module->modname, module);
 }
 
 struct module *lookup_module(char *modname) {

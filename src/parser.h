@@ -49,7 +49,7 @@ struct module {
 
     // extern_name -> struct ffi_call
     map_t *ffi_name;
-    
+
 };
 
 struct module *parse_module(char * filename, map_t *instrs_regs);

@@ -1,0 +1,10 @@
+module l2
+
+import l1.cvm
+
+export l2foo
+
+l2foo:
+    mov R1 $2
+    call l1.l1foo
+    ret

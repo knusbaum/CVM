@@ -1,0 +1,12 @@
+module main
+
+export start
+
+import l1.cvm
+import l2.cvm
+import l3.cvm
+
+
+start:
+    call l2.l2foo
+    exit

@@ -791,7 +791,7 @@ START_TEST(test_data)
 
     ck_assert_msg(registers[R2] == 0x6867666564636261,
                   "Expected register R2 == 0x6867666564636261, but register R2 == %.16lX", registers[R2]);
-    
+
 }
 END_TEST
 
@@ -852,6 +852,6 @@ TCase *instruction_testcases() {
     tcase_add_test(tc, test_ret);
 
     tcase_add_test(tc, test_data);
-    
+
     return tc;
 }

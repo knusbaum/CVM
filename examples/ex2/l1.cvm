@@ -1,0 +1,7 @@
+module l1
+
+export l1foo
+
+l1foo:
+    mov R0 $1
+    ret
