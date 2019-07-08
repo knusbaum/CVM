@@ -1,8 +1,5 @@
 module test
 
-# ssize_t write(int fildes, const void *buf, size_t nbyte);
-extern write sint32 pointer uint64
-
 struct list
     next $8
     val  $8

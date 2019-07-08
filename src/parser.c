@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <libgen.h>
+#include <inttypes.h>
 #include <ffi.h>
 #include "gc.h"
 #include "errors.h"
@@ -625,9 +626,13 @@ static void convert_instr(struct module *m, lexed_instr *instr, struct binstr *b
 
 static int parse_arg(struct module *m, char *arg, unsigned long line, uintptr_t *outval) {
     uintptr_t x;
-    int scanned = sscanf(arg, "$%ld", &x);
+    if (strcmp(arg, "$ptr") == 0) {
+        *outval = sizeof (void *);
+        return 1;
+    }
+    int scanned = sscanf(arg, "$%" PRIdPTR, &x);
     if(scanned < 1) {
-        scanned = sscanf(arg, "0x%lx", &x);
+        scanned = sscanf(arg, "0x%" PRIxPTR, &x);
     }
 //    if(scanned < 1) {
 //        fatal("Failed to scan constant from string \"%s\". %s:%d\n",

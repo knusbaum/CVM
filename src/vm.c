@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <ffi.h>
 #include "gc.h"
 #include "errors.h"
@@ -37,21 +38,21 @@ map_t *get_registers() {
 
 void dump_regs() {
     info("Current State:\n");
-    info("R0:  0x%.16lX\n", registers[0]);
-    info("R1:  0x%.16lX\n", registers[1]);
-    info("R2:  0x%.16lX\n", registers[2]);
-    info("R3:  0x%.16lX\n", registers[3]);
-    info("R4:  0x%.16lX\n", registers[4]);
-    info("R5:  0x%.16lX\n", registers[5]);
-    info("R6:  0x%.16lX\n", registers[6]);
-    info("R7:  0x%.16lX\n", registers[7]);
-    info("R8:  0x%.16lX\n", registers[8]);
-    info("R9:  0x%.16lX\n", registers[9]);
-    info("R10: 0x%.16lX\n", registers[10]);
-    info("R11: 0x%.16lX\n", registers[11]);
-    info("R12: 0x%.16lX\n", registers[12]);
-    info("IP: 0x%.16lX\n", registers[13]);
-    info("SP: 0x%.16lX\n", registers[14]);
+    info("R0:  0x%.16X\n", registers[0]);
+    info("R1:  0x%.16X\n", registers[1]);
+    info("R2:  0x%.16X\n", registers[2]);
+    info("R3:  0x%.16X\n", registers[3]);
+    info("R4:  0x%.16X\n", registers[4]);
+    info("R5:  0x%.16X\n", registers[5]);
+    info("R6:  0x%.16X\n", registers[6]);
+    info("R7:  0x%.16X\n", registers[7]);
+    info("R8:  0x%.16X\n", registers[8]);
+    info("R9:  0x%.16X\n", registers[9]);
+    info("R10: 0x%.16X\n", registers[10]);
+    info("R11: 0x%.16X\n", registers[11]);
+    info("R12: 0x%.16X\n", registers[12]);
+    info("IP: 0x%.16X\n", registers[13]);
+    info("SP: 0x%.16X\n", registers[14]);
 }
 
 #include <unistd.h>
@@ -222,7 +223,7 @@ movor:
     NEXTI;
 movoc:
     ob = (unsigned char *)registers[bs->a1];
-//    info("Executing [MOVOC] on object %p(%d)[%d]<%d>, %.16lX\n",
+//    info("Executing [MOVOC] on object %p(%d)[%d]<%d>, %.16X\n",
 //         ob, bs->msize, bs->offset / bs->msize, bs->offset, bs->constant);
     ob += bs->offset;
 
@@ -496,7 +497,7 @@ ret:
     NEXTI;
 
 dumpreg:
-    printf("R%d: %.16lX (%ld)\n", bs->a1, registers[bs->a1], registers[bs->a1]);
+    printf("R%d: %.16" PRIxPTR " (%" PRIdPTR ")\n", bs->a1, registers[bs->a1], registers[bs->a1]);
     NEXTI;
 exit:
 //    info("CVM got EXIT @ %p\n", bs);
