@@ -484,7 +484,7 @@ fcall:
     for (int i = 0; i < fcall->arg_count; i++) {
         values[i] = &registers[i];
     }
-    ffi_call(&fcall->cif, (void *)write, &rc, values);
+    ffi_call(&fcall->cif, fcall->fptr, &rc, values);
     registers[R0] = rc;
     NEXTI;
 

@@ -1,0 +1,50 @@
+module string
+
+export strlen
+export putstr
+export readbuf
+
+# ssize_t write(int fildes, const void *buf, size_t nbyte);
+extern slong write sint pointer ulong
+
+# ssize_t read(int fildes, void *buf, size_t nbyte);
+extern slong read sint pointer ulong
+
+## Pointer to string in R0
+## Return size in R0
+strlen:
+    mov R1 $0
+
+strlen_loop:
+    mov R3 R0($1)[$0]
+    cmp R3 $0
+    je strlen_end
+    inc R1
+    inc R0
+    jmp strlen_loop
+
+strlen_end:
+    mov R0 R1
+    ret
+
+## Pointer to string in R0
+## Return chars written in R0
+putstr:
+     push R0
+     call strlen
+     mov R2 R0
+     mov R0 $1
+     pop R1
+     call write
+     ret
+
+## Pointer to buffer in R0
+## Buffer size in R1
+## Return bytes read in R0
+readbuf:
+    mov R2 R1
+    mov R1 R0
+    mov R0 $0
+    call read
+    ret
+    

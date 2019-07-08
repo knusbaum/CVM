@@ -289,7 +289,6 @@ static void next_instruction(lexed_instr *i, FILE *f) {
     i->line = line_number;
     i->instr = lex_white_separated(f);
     apply_type(i);
-    printf("i->instr = %s\n", i->instr);
     if(i->type == EXTERN) {
         lex_extern(i, f);
         return;
@@ -297,7 +296,6 @@ static void next_instruction(lexed_instr *i, FILE *f) {
 
     consume_space(f);
     i->arg1 = lex_white_separated(f);
-    printf("i->arg1 = (%p)%s\n", i->arg1, i->arg1);
     // Interrupt the reading here if we have a DATA instruction.
     if(i->type == DATA) {
         parse_data(i, f);
@@ -306,7 +304,6 @@ static void next_instruction(lexed_instr *i, FILE *f) {
 
     consume_space(f);
     i->arg2 = lex_white_separated(f);
-    printf("i->arg2 = %s\n", i->arg2);
     consume_space(f);
 
     match_char('\n', f);

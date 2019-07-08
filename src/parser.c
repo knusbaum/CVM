@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <libgen.h>
 #include <inttypes.h>
+#include <dlfcn.h>
 #include <ffi.h>
 #include "gc.h"
 #include "errors.h"
@@ -205,8 +206,12 @@ static void parse_extern(struct module *m, lexed_instr *instr) {
     info("CFFI_PREP_CIF %d args.\n", i);
     if (ffi_prep_cif(&fcall->cif, FFI_DEFAULT_ABI, i, ret, args) == FFI_OK) {
 
+        void *fn_handle = dlsym(NULL, fn_name);
+        if(fn_handle == NULL) {
+            fatal("Could not find function %s.\n", 10, fn_name);
+        }
         //fcall->cif = cif;
-        fcall->fptr = &write;
+        fcall->fptr = fn_handle;
         fcall->arg_count = i;
         fcall->arg_sizes = arg_sizes;
         info("map_put(m->ffi_name, %s, fcall);\n", fn_name);
@@ -411,7 +416,6 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         break;
     case CALL:
         ensure_one_arg(m, instr);
-        info("HAVE CALL (%p)%s\n", instr->arg1, instr->arg1);
         b->instr = (void *)CALLCALC;
         char *label = GC_MALLOC(strlen(instr->arg1));
         strcpy(label, instr->arg1);

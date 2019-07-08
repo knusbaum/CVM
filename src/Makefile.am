@@ -1,5 +1,5 @@
 AM_CFLAGS = -ggdb -std=gnu11 -Wall -Werror
-AM_LDFLAGS = -lgc -lffi
+AM_LDFLAGS = -lgc -lffi -ldl
 
 pkginclude_HEADERS=errors.h lexer.h parser.h vm.h map.h buffwriter.h
 

@@ -1,0 +1,51 @@
+module fcall_test
+
+import string.cvm
+
+data strfoo "foo bar baz\n"
+data hello "Hello\tWorld!\n"
+data prompt "Enter a string: "
+data reply "Got: "
+data newline "\n"
+
+export start
+
+start:
+    mov R0 strfoo
+    call string.putstr
+
+    mov R0 hello
+    call string.putstr
+
+    mov R0 prompt
+    call string.putstr
+
+    new R0 $100
+    push R0
+    mov R1 $100
+    call string.readbuf
+    dumpreg R0
+
+    mov R0 reply
+    call string.putstr
+
+    pop R0
+    call string.putstr
+
+#    mov R0 newline
+#    call string.putstr
+
+
+#
+#    new R5 $100
+#    mov R0 $0
+#    mov R1 R5
+#    mov R2 $100
+#    call read
+#
+#    mov R0 $1
+#    mov R1 R5
+#    mov R2 $100
+#    call write
+
+    exit
