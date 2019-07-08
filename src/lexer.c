@@ -123,6 +123,9 @@ static void apply_type(lexed_instr *instr) {
     else if(strcmp(lexbuff, "inc") == 0) {
         instr->type = INC;
     }
+    else if(strcmp(lexbuff, "dec") == 0) {
+        instr->type = DEC;
+    }
     else if(strcmp(lexbuff, "cmp") == 0) {
         instr->type = CMP;
     }

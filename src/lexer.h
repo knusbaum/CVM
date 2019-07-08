@@ -8,6 +8,7 @@ enum token_type {
     ADD,
     SUB,
     INC,
+    DEC,
     CMP,
     DATA,
     EXIT,

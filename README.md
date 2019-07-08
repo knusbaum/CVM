@@ -54,3 +54,11 @@ $ src/cvm examples/testlist.cvm
 The output of `cvm` is extremely verbose, and there is no IO currently except for the `dumpreg` instruction.
 I plan to change this in the future, but this is in early stages and under heavy development.
 
+The Boehm GC that the project is currently using will abort if the heap gets to big. To get around this you
+can set the heap to a larger value by setting the environment variable `GC_INITIAL_HEAP_SIZE` before running
+`cvm`.
+
+```
+$ export GC_INITIAL_HEAP_SIZE=25G
+$ cvm main.cvm
+```

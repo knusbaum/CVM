@@ -98,6 +98,7 @@ static void __vm(struct module *module, map_t **vm_map) {
 
         // Integer arithmetic
         map_put(regmap, "incr", &&incr);
+        map_put(regmap, "decr", &&decr);
         map_put(regmap, "cmprr", &&cmprr);
         map_put(regmap, "cmprc", &&cmprc);
         map_put(regmap, "addrr", &&addrr);
@@ -288,6 +289,9 @@ movoo:
 incr:
 //    info("Executing  [INCR] on reg %d\n", bs->a1);
     registers[bs->a1]++;
+    NEXTI;
+decr:
+    registers[bs->a1]--;
     NEXTI;
 cmprr:
 //    info("Executing  [CMPRR] on reg %d(%ld), reg %d(%ld) (",

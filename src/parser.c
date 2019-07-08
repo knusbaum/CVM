@@ -287,6 +287,10 @@ static void translate_instruction(struct module *m, lexed_instr *instr, struct b
         ensure_one_arg(m, instr);
         convert_instr(m, instr, b);
         break;
+    case DEC:
+        ensure_one_arg(m, instr);
+        convert_instr(m, instr, b);
+        break;
     case CMP:
         ensure_two_arg(m, instr);
         convert_instr(m, instr, b);
