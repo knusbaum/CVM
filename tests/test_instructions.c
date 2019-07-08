@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <check.h>
+#include <ffi.h>
 #include "../src/map.h"
 #include "../src/parser.h"
 #include "../src/vm.h"
@@ -55,29 +56,29 @@ START_TEST(test_struct_new_movro_movor_movoc)
 
         "start:\n"
         // Create a foo (new)
-        "new R0 foo\n"
+        "new R10 foo\n"
 
         // Populate foo.bar with 10 (movor)
         "mov R1 0xFEEDBAAC\n"
         "mov R2 0xCAFEBABE\n"
-        "mov R0(foo.bar) R1\n"
-        "mov R0(foo.baz) R2\n"
+        "mov R10(foo.bar) R1\n"
+        "mov R10(foo.baz) R2\n"
 
         // move foo.bar into R3 (movro)
-        "mov R3 R0(foo.bar)\n"
+        "mov R3 R10(foo.bar)\n"
 
         // Populate foo.bar with $12 (movoc)
-        "mov R0(foo.bar) $12\n"
-        "mov R4 R0(foo.bar)\n"
+        "mov R10(foo.bar) $12\n"
+        "mov R4 R10(foo.bar)\n"
 
 
-        "mov R5 R0(foo.baz)\n"
+        "mov R5 R10(foo.baz)\n"
 
         "exit\n"
         );
 
-    ck_assert_msg(registers[R0] != 0,
-                  "Expected register R0 != 0, but R0 == %d", registers[R0]);
+    ck_assert_msg(registers[R10] != 0,
+                  "Expected register R10 != 0, but R10 == %d", registers[R10]);
     ck_assert_msg(registers[R3] == 0xFEEDBAAC,
                   "Expected register R3 == 0xFEEDBAAC, but R3 == %.16lX", registers[R3]);
     ck_assert_msg(registers[R4] == 12,
@@ -102,24 +103,23 @@ START_TEST(test_struct_sized_members)
 
         "start:\n"
         // Create a foo (new)
-        "new R0 foo\n"
+        "new R10 foo\n"
 
         "mov R1 0xFEEDBAAC\n"
         "mov R2 0xCAFEBABE\n"
-        "mov R0(foo.bar) R1\n"
-        "mov R0(foo.baz) R2\n"
+        "mov R10(foo.bar) R1\n"
+        "mov R10(foo.baz) R2\n"
 
-        "mov R3 R0($8)[$0]\n"
+        "mov R3 R10($8)[$0]\n"
 
 
         "mov R4 0x01234567ABCDEF99\n"
-        "mov R0(foo.daz) R4\n"
+        "mov R10(foo.daz) R4\n"
 
-        "mov R5 0xDEADBEEF\n"
-        "mov R0(foo.dar) R5\n"
+        "mov R10(foo.dar) 0xDEADBEEF\n"
 
-        "mov R6 R0(foo.daz)\n"
-        "mov R7 R0(foo.dar)\n"
+        "mov R6 R10(foo.daz)\n"
+        "mov R7 R10(foo.dar)\n"
 
         "exit\n"
         );
@@ -777,6 +777,24 @@ START_TEST(test_ret)
 }
 END_TEST
 
+START_TEST(test_data)
+{
+    PRINT_TEST_NAME
+    run_testcode(
+        "data foo \"abcdefgh\"\n"
+
+        "start:\n"
+        "mov R1 foo\n"
+        "mov R2 R1($8)[$0]\n"
+        "exit\n"
+        );
+
+    ck_assert_msg(registers[R2] == 0x6867666564636261,
+                  "Expected register R2 == 0x6867666564636261, but register R2 == %.16lX", registers[R2]);
+    
+}
+END_TEST
+
 TCase *instruction_testcases() {
     TCase *tc = tcase_create("VM Instructions");
 
@@ -833,5 +851,7 @@ TCase *instruction_testcases() {
     tcase_add_test(tc, test_call);
     tcase_add_test(tc, test_ret);
 
+    tcase_add_test(tc, test_data);
+    
     return tc;
 }

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <ffi.h>
 #define LARGE_CONFIG
 #include "gc.h"
 #include "errors.h"

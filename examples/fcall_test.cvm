@@ -1,0 +1,27 @@
+module fcall_test
+
+# ssize_t write(int fildes, const void *buf, size_t nbyte);
+extern slong write sint32 pointer ulong
+
+data strfoo "foo bar baz\n"
+
+data hello "Hello\tWorld!\n"
+
+export start
+
+foo:
+    ret
+
+start:
+    mov R0 $1
+    mov R1 strfoo
+    mov R2 $13
+
+    call write
+
+    mov R0 $1
+    mov R1 hello
+    mov R2 $13
+
+    call write
+    exit

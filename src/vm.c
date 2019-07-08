@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <ffi.h>
 #include "gc.h"
 #include "errors.h"
 #include "map.h"
@@ -67,12 +68,20 @@ void dump_regs() {
 map_t *regmap;
 
 static void __vm(struct module *module, map_t **vm_map) {
+//    int a1;
+//    char *a2;
+//    size_t a3;
+
+
     void *target;
     unsigned char *ob, *ob2;
     uint8_t *ob8, *ob8_2;
     uint16_t *ob16, *ob16_2;
     uint32_t *ob32, *ob32_2;
     uint64_t *ob64, *ob64_2;
+    struct ffi_call *fcall;
+    ffi_arg rc;
+    void *values[100];
 
     if(vm_map != NULL) {
         if(regmap != NULL) {
@@ -120,6 +129,7 @@ static void __vm(struct module *module, map_t **vm_map) {
         map_put(regmap, "popr", &&popr);
 
         map_put(regmap, "call", &&call);
+        map_put(regmap, "fcall", &&fcall);
         map_put(regmap, "ret", &&ret);
 
         map_put(regmap, "dumpreg", &&dumpreg);
@@ -155,8 +165,8 @@ movrc:
     NEXTI;
 movro:
     ob = (unsigned char *)registers[bs->a2];
-    info("Executing [MOVRO] on reg %d, object %p(%d)[%d]<%d>\n",
-         bs->a1, ob, bs->msize, bs->offset2 / bs->msize, bs->offset2);
+//    info("Executing [MOVRO] on reg %d, object %p(%d)[%d]<%d>\n",
+//         bs->a1, ob, bs->msize, bs->offset2 / bs->msize, bs->offset2);
     ob += bs->offset2;
 
     switch(bs->msize) {
@@ -183,8 +193,8 @@ movro:
     NEXTI;
 movor:
     ob = (unsigned char *)registers[bs->a1];
-    info("Executing [MOVOR] on object %p(%d)[%d]<%d>, reg %d\n",
-         ob, bs->msize, bs->offset / bs->msize, bs->offset, bs->a2);
+//    info("Executing [MOVOR] on object %p(%d)[%d]<%d>, reg %d\n",
+//         ob, bs->msize, bs->offset / bs->msize, bs->offset, bs->a2);
     ob += bs->offset;
 
     switch(bs->msize) {
@@ -212,8 +222,8 @@ movor:
     NEXTI;
 movoc:
     ob = (unsigned char *)registers[bs->a1];
-    info("Executing [MOVOC] on object %p(%d)[%d]<%d>, %.16lX\n",
-         ob, bs->msize, bs->offset / bs->msize, bs->offset, bs->constant);
+//    info("Executing [MOVOC] on object %p(%d)[%d]<%d>, %.16lX\n",
+//         ob, bs->msize, bs->offset / bs->msize, bs->offset, bs->constant);
     ob += bs->offset;
 
     switch(bs->msize) {
@@ -241,9 +251,9 @@ movoc:
 movoo:
     ob = (uint8_t *)registers[bs->a1];
     ob2 = (uint8_t *)registers[bs->a2];
-    info("Executing [MOVOO] on object %p(%d)[%d]<%d>, from object %p(%d)[%d]<%d>\n",
-         ob, bs->msize, bs->offset / bs->msize, bs->offset,
-         ob2, bs->msize, bs->offset2 / bs->msize, bs->offset2);
+//    info("Executing [MOVOO] on object %p(%d)[%d]<%d>, from object %p(%d)[%d]<%d>\n",
+//         ob, bs->msize, bs->offset / bs->msize, bs->offset,
+//         ob2, bs->msize, bs->offset2 / bs->msize, bs->offset2);
 
     ob += bs->offset;
     ob2 += bs->offset2;
@@ -453,6 +463,29 @@ call:
     lbs = (uintptr_t)bs->target;
     goto *bs->instr;
 
+fcall:
+    fcall = bs->fcall;
+//    for (int i = 0; i < fcall->arg_count; i++) {
+//        //values[i] = (void *)registers[i];
+//        if(fcall->arg_sizes[i] == 1) {
+//            values[i] = (void *) ((uint8_t *)(registers + i));
+//        }
+//        else if(fcall->arg_sizes[i] == 2) {
+//            values[i] = (void *) ((uint16_t *)(registers + i));
+//        }
+//        else if(fcall->arg_sizes[i] == 4) {
+//            values[i] = (void *) ((uint32_t *)(registers + i) );
+//        }
+//        else if(fcall->arg_sizes[i] == 8) {
+//            values[i] = (void *) (registers + i);
+//        }
+//    }
+    for (int i = 0; i < fcall->arg_count; i++) {
+        values[i] = &registers[i];
+    }
+    ffi_call(&fcall->cif, (void *)write, &rc, values);
+    registers[R0] = rc;
+    NEXTI;
 
 ret:
     registers[SP]-=(sizeof (uintptr_t));

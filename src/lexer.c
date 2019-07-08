@@ -102,6 +102,9 @@ static void apply_type(lexed_instr *instr) {
     else if(strcmp(lexbuff, "export") == 0) {
         instr->type = EXPORT;
     }
+    else if(strcmp(lexbuff, "extern") == 0) {
+        instr->type = EXTERN;
+    }
     else if(strcmp(lexbuff, "mov") == 0) {
         instr->type = MOV;
     }
@@ -199,18 +202,37 @@ static void lex_struct(lexed_struct *s, FILE *f) {
             fatal("%lu:%lu Expected struct member size, but found nothing.\n", 1, line_number, char_number);
         }
 
-        info("Adding member %s to struct.\n", member_name);
+//        info("Adding member %s(%s) to struct.\n", member_name, size);
 
         if(s->member_count == s->member_length) {
-            info("Reallocing.\n");
+//            info("Reallocing.\n");
             s->member_length *= 2;
             s->members = GC_REALLOC(s->members, s->member_length * sizeof (lexed_member));
         }
 
         s->members[s->member_count].name = member_name;
         s->members[s->member_count++].size = size;
-        info("SIZE: %s\n", size);
     }
+}
+
+static void lex_extern(lexed_instr *i, FILE *f) {
+    size_t arg_count = 0;
+    size_t arg_size = 2;
+    char **arg_types = GC_MALLOC(arg_size * sizeof (char *));
+    char *arg = NULL;
+    consume_space(f);
+    while ((arg = lex_white_separated(f)) != NULL) {
+        consume_space(f);
+        info("ARG: (%s)\n", arg);
+        arg_types[arg_count++] = arg;
+        if(arg_count == arg_size - 1) {
+            arg_size *= 2;
+            arg_types = GC_REALLOC(arg_types, arg_size * sizeof (char *));
+            info("REALLOCING!\n");
+        }
+    }
+    arg_types[arg_count] = NULL; // Null terminated char * array
+    i->types = arg_types;
 }
 
 static void parse_data(lexed_instr *i, FILE *f) {
@@ -227,6 +249,17 @@ static void parse_data(lexed_instr *i, FILE *f) {
     if(look == '"') {
         get_char(f);
         while(look != '"') {
+            if(look == '\\') {
+                get_char(f);
+                switch(look) {
+                case 'n': buffer_write_byte(&buf, '\n'); break;
+                case 't': buffer_write_byte(&buf, '\t'); break;
+                case '\\': buffer_write_byte(&buf, '\\'); break;
+                }
+                get_char(f);
+                continue;
+            }
+            
             buffer_write_byte(&buf, look);
             get_char(f);
         }
@@ -239,7 +272,7 @@ static void parse_data(lexed_instr *i, FILE *f) {
     char *data = GC_MALLOC(length + 1);
     memcpy(data, buf.buff, length);
     data[length] = 0;
-    info("FOUND STRING %s\n", data);
+//    info("FOUND STRING %s\n", data);
     i->arg2 = data;
 }
 
@@ -256,10 +289,15 @@ static void next_instruction(lexed_instr *i, FILE *f) {
     i->line = line_number;
     i->instr = lex_white_separated(f);
     apply_type(i);
+    printf("i->instr = %s\n", i->instr);
+    if(i->type == EXTERN) {
+        lex_extern(i, f);
+        return;
+    }
 
     consume_space(f);
     i->arg1 = lex_white_separated(f);
-
+    printf("i->arg1 = (%p)%s\n", i->arg1, i->arg1);
     // Interrupt the reading here if we have a DATA instruction.
     if(i->type == DATA) {
         parse_data(i, f);
@@ -268,12 +306,13 @@ static void next_instruction(lexed_instr *i, FILE *f) {
 
     consume_space(f);
     i->arg2 = lex_white_separated(f);
+    printf("i->arg2 = %s\n", i->arg2);
     consume_space(f);
 
     match_char('\n', f);
 
     if(i->type == STRUCT) {
-        info("Lexer creating struct.\n");
+//        info("Lexer creating struct.\n");
         lexed_struct *structure = GC_MALLOC(sizeof (lexed_struct));
         structure->member_count = 0;
         structure->member_length = 8;
@@ -307,7 +346,7 @@ lexed_instr *lex_module(char *filename) {
     lexed_instr *instr;
     do {
         if(currindex == instrs_scale * INSTRS_PER_ALLOC) {
-            info("Allocing more instr space for module.\n");
+//            info("Allocing more instr space for module.\n");
             instrs_scale *= 2;
             instrs = GC_REALLOC(instrs,
                              sizeof (lexed_instr)

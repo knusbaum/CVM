@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <check.h>
+#include <ffi.h>
 #include "../src/map.h"
 #include "../src/parser.h"
 #include "../src/vm.h"

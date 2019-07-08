@@ -1,41 +1,44 @@
 module test
 
+# ssize_t write(int fildes, const void *buf, size_t nbyte);
+extern write sint32 pointer uint64
+
 struct list
-    next
-    val
+    next $8
+    val  $8
     ## These are here just to take up space.
-    a
-    b
-    c
-    d
-    e
-    f
-    g
-    h
-    i
-    j
-    k
-    l
-    m
-    n
-    o
-    p
-    q
-    r
-    s
-    t
-    u
-    v
-    w
-    x
-    y
-    z
+    a    $8
+    b    $8
+    c    $8
+    d    $8
+    e    $8
+    f    $8
+    g    $8
+    h    $8
+    i    $8
+    j    $8
+    k    $8
+    l    $8
+    m    $8
+    n    $8
+    o    $8
+    p    $8
+    q    $8
+    r    $8
+    s    $8
+    t    $8
+    u    $8
+    v    $8
+    w    $8
+    x    $8
+    y    $8
+    z    $8
 endstruct
 
 struct foo
-    bar
-    baz
-    boo
+    bar $8
+    baz $8
+    boo $8
 endstruct
 
 

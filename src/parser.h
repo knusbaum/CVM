@@ -9,6 +9,7 @@ struct binstr {
         char *label;
         size_t offset2;
         void *target;
+        struct ffi_call *fcall;
     };
 };
 
@@ -21,6 +22,13 @@ struct parsed_member {
 struct parsed_struct {
     size_t struct_size;
     map_t *members;
+};
+
+struct ffi_call {
+    ffi_cif cif;
+    void *fptr;
+    size_t arg_count;
+    size_t *arg_sizes;
 };
 
 struct module {
@@ -39,6 +47,9 @@ struct module {
     // struct_name -> member_name -> offset
     map_t *structures;
 
+    // extern_name -> struct ffi_call
+    map_t *ffi_name;
+    
 };
 
 struct module *parse_module(char * filename, map_t *instrs_regs);

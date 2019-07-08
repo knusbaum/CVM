@@ -22,3 +22,5 @@ testlist: cvm
 fib: cvm
 	src/cvm examples/fib.cvm
 
+fcall_test: cvm
+	src/cvm examples/fcall_test.cvm

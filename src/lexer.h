@@ -1,6 +1,7 @@
 enum token_type {
     MODULE,
     EXPORT,
+    EXTERN,
     MOV,
     PUSH,
     POP,
@@ -45,6 +46,7 @@ typedef struct lexed_instr {
     union {
         char * arg2;
         lexed_struct *lexed_struct;
+        char **types;
     };
 } lexed_instr;
 
