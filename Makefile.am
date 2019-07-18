@@ -1,5 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = src tests
+pkgconfig_DATA = libcvm.pc
 
 cvm:
 	make -C src cvm

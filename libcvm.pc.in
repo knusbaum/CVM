@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: CVM
+Description: Compact VM which executes a simple assembly language
+URL: https://github.com/knusbaum/CVM
+Version: @VERSION@
+Requires: ffi >= 6.0, gc >= 8.0
+Libs: -L@libdir@ -lcvm
+Cflags: 

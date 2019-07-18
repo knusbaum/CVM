@@ -8,6 +8,10 @@ LT_INIT()
 AC_OUTPUT(Makefile src/Makefile tests/Makefile)
 AC_CONFIG_SRCDIR([src/errors.c])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([libcvm.pc])
+
+PKG_PROG_PKG_CONFIG
+PKG_INSTALLDIR
 
 # Checks for programs.
 AC_PROG_CC
